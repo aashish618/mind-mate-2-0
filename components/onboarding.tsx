@@ -8,9 +8,10 @@ import { Heart, ArrowRight, User, Globe } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function Onboarding({ onComplete }: { onComplete: () => void }) {
-  const { setUserName, setLanguage, language } = useMedicineStore()
+  const { setUserName, setLanguage, language, loadSampleMedicines, loadDefaultCaregivers } = useMedicineStore()
   const [step, setStep] = useState(1)
   const [name, setName] = useState("")
+  const [loadSampleData, setLoadSampleData] = useState(true)
 
   const handleNameSubmit = () => {
     if (name.trim()) {
@@ -21,6 +22,10 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
 
   const handleLanguageSelect = (lang: 'en' | 'hi') => {
     setLanguage(lang)
+    if (loadSampleData) {
+      loadSampleMedicines()
+      loadDefaultCaregivers()
+    }
     onComplete()
   }
 
@@ -113,6 +118,22 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
                 </div>
               </button>
             </div>
+
+            {/* Load Sample Data Checkbox */}
+            <label className="flex items-start gap-3 p-4 rounded-xl bg-card border border-border cursor-pointer hover:border-primary/50 transition-colors">
+              <input
+                type="checkbox"
+                checked={loadSampleData}
+                onChange={(e) => setLoadSampleData(e.target.checked)}
+                className="mt-1 w-5 h-5 rounded border-border accent-primary"
+              />
+              <div>
+                <p className="font-medium text-foreground">Load 50 common Indian medicines</p>
+                <p className="text-sm text-muted-foreground">
+                  Pre-load popular medicines like Paracetamol, Metformin, Amlodipine with proper dosages and timings. Also includes emergency helpline numbers.
+                </p>
+              </div>
+            </label>
           </div>
         )}
 

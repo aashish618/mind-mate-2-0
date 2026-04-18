@@ -17,6 +17,18 @@ const relationshipOptions = [
   { id: 'other', label: 'Other' },
 ]
 
+const getRelationshipBadge = (relationship: string) => {
+  const isEmergency = ['Emergency', 'Hospital', 'Helpline'].includes(relationship)
+  return isEmergency ? 'bg-destructive/10 text-destructive' : 'bg-accent/10 text-accent'
+}
+
+const getRelationshipIcon = (relationship: string) => {
+  if (['Emergency', 'Hospital', 'Helpline'].includes(relationship)) {
+    return '🚨'
+  }
+  return '👤'
+}
+
 export function CaregiverDialog() {
   const { caregivers, addCaregiver, removeCaregiver } = useMedicineStore()
   const [open, setOpen] = useState(false)
@@ -72,34 +84,79 @@ export function CaregiverDialog() {
         <div className="mt-4 space-y-4">
           {/* Existing Caregivers */}
           {caregivers.length > 0 && (
-            <div className="space-y-3">
-              {caregivers.map((caregiver) => (
-                <div
-                  key={caregiver.id}
-                  className="flex items-center justify-between p-4 rounded-xl bg-secondary/50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
-                      <Users className="w-5 h-5 text-accent" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">{caregiver.name}</p>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Phone className="w-3 h-3" />
-                        {caregiver.phone}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeCaregiver(caregiver.id)}
-                    className="text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+              {/* Emergency Contacts Section */}
+              {caregivers.some(c => ['Emergency', 'Hospital', 'Helpline'].includes(c.relationship)) && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Emergency Contacts</p>
+                  {caregivers
+                    .filter(c => ['Emergency', 'Hospital', 'Helpline'].includes(c.relationship))
+                    .map((caregiver) => (
+                      <div
+                        key={caregiver.id}
+                        className="flex items-center justify-between p-3 rounded-xl bg-destructive/5 border border-destructive/20"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center text-lg">
+                            {getRelationshipIcon(caregiver.relationship)}
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground text-sm">{caregiver.name}</p>
+                            <a 
+                              href={`tel:${caregiver.phone}`}
+                              className="text-sm text-destructive flex items-center gap-1 hover:underline"
+                            >
+                              <Phone className="w-3 h-3" />
+                              {caregiver.phone}
+                            </a>
+                          </div>
+                        </div>
+                        <span className={cn("text-xs px-2 py-1 rounded-full", getRelationshipBadge(caregiver.relationship))}>
+                          {caregiver.relationship}
+                        </span>
+                      </div>
+                    ))}
                 </div>
-              ))}
+              )}
+
+              {/* Family Contacts Section */}
+              {caregivers.some(c => !['Emergency', 'Hospital', 'Helpline'].includes(c.relationship)) && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Family Members</p>
+                  {caregivers
+                    .filter(c => !['Emergency', 'Hospital', 'Helpline'].includes(c.relationship))
+                    .map((caregiver) => (
+                      <div
+                        key={caregiver.id}
+                        className="flex items-center justify-between p-3 rounded-xl bg-secondary/50"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
+                            <Users className="w-5 h-5 text-accent" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground text-sm">{caregiver.name}</p>
+                            <a 
+                              href={`tel:${caregiver.phone}`}
+                              className="text-sm text-muted-foreground flex items-center gap-1 hover:underline"
+                            >
+                              <Phone className="w-3 h-3" />
+                              {caregiver.phone}
+                            </a>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeCaregiver(caregiver.id)}
+                          className="text-destructive hover:bg-destructive/10 h-8 w-8"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                </div>
+              )}
             </div>
           )}
 

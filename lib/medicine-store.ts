@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { sampleMedicines, defaultCaregivers } from './sample-data'
 
 export interface Medicine {
   id: string
@@ -54,6 +55,9 @@ interface MedicineStore {
   
   getTodaysDoses: () => { medicine: Medicine; timing: string; log: DoseLog | undefined }[]
   getMedicineById: (id: string) => Medicine | undefined
+  loadSampleMedicines: () => void
+  loadDefaultCaregivers: () => void
+  clearAllData: () => void
 }
 
 const generateId = () => Math.random().toString(36).substring(2, 9)
@@ -197,6 +201,40 @@ export const useMedicineStore = create<MedicineStore>()(
 
       getMedicineById: (id) => {
         return get().medicines.find((m) => m.id === id)
+      },
+
+      loadSampleMedicines: () => {
+        const newMedicines = sampleMedicines.map((m) => ({
+          ...m,
+          id: generateId(),
+        }))
+        set((state) => ({ 
+          medicines: [...state.medicines, ...newMedicines] 
+        }))
+      },
+
+      loadDefaultCaregivers: () => {
+        const existingPhones = new Set(get().caregivers.map(c => c.phone))
+        const newCaregivers = defaultCaregivers
+          .filter(c => !existingPhones.has(c.phone))
+          .map((c) => ({
+            ...c,
+            id: generateId(),
+          }))
+        set((state) => ({ 
+          caregivers: [...state.caregivers, ...newCaregivers] 
+        }))
+      },
+
+      clearAllData: () => {
+        set({
+          medicines: [],
+          doseLogs: [],
+          caregivers: [],
+          streak: 0,
+          userName: '',
+          language: 'en',
+        })
       },
     }),
     {

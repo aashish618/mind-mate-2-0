@@ -9,11 +9,18 @@ import { StreakBanner } from "@/components/streak-banner"
 import { DashboardStats } from "@/components/dashboard-stats"
 import { Onboarding } from "@/components/onboarding"
 import { EmptyState } from "@/components/empty-state"
-import { Heart, Settings, Bell } from "lucide-react"
+import { Heart, Settings, Bell, Download, Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default function Home() {
-  const { userName, medicines, getTodaysDoses, logDose } = useMedicineStore()
+  const { 
+    userName, 
+    medicines, 
+    getTodaysDoses, 
+    loadSampleMedicines, 
+    loadDefaultCaregivers,
+    caregivers,
+  } = useMedicineStore()
   const [isOnboarded, setIsOnboarded] = useState(false)
   const [mounted, setMounted] = useState(false)
   
@@ -115,6 +122,30 @@ export default function Home() {
 
         {/* Streak Banner */}
         {medicines.length > 0 && <StreakBanner />}
+
+        {/* Quick Actions - Load Sample Data */}
+        <div className="flex flex-wrap gap-3">
+          {medicines.length === 0 && (
+            <Button 
+              variant="outline" 
+              onClick={() => loadSampleMedicines()}
+              className="flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Load 50 Common Medicines
+            </Button>
+          )}
+          {caregivers.length === 0 && (
+            <Button 
+              variant="outline" 
+              onClick={() => loadDefaultCaregivers()}
+              className="flex items-center gap-2"
+            >
+              <Phone className="w-4 h-4" />
+              Load Emergency Contacts
+            </Button>
+          )}
+        </div>
 
         {/* Medicine List or Empty State */}
         {medicines.length === 0 ? (
