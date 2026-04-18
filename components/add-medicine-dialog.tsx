@@ -6,8 +6,30 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useMedicineStore } from "@/lib/medicine-store"
-import { Plus, Sun, CloudSun, Sunset, Moon, Pill } from "lucide-react"
+import { medicineCategories, MedicineCategory } from "@/lib/sample-data"
+import { Plus, Sun, CloudSun, Sunset, Moon, Pill, Heart, Droplet, Thermometer, Shield, Apple, Wind, Activity, Brain, Zap, Droplets, Sparkles, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
+
+const categoryOptions = Object.entries(medicineCategories).map(([id, info]) => ({
+  id: id as MedicineCategory,
+  label: info.name,
+  color: info.color,
+}))
+
+const categoryIcons: Record<string, React.ReactNode> = {
+  cardiovascular: <Heart className="w-4 h-4" />,
+  diabetes: <Droplet className="w-4 h-4" />,
+  pain: <Thermometer className="w-4 h-4" />,
+  antibiotics: <Shield className="w-4 h-4" />,
+  gastric: <Apple className="w-4 h-4" />,
+  respiratory: <Wind className="w-4 h-4" />,
+  vitamins: <Sun className="w-4 h-4" />,
+  thyroid: <Activity className="w-4 h-4" />,
+  mental: <Brain className="w-4 h-4" />,
+  steroids: <Zap className="w-4 h-4" />,
+  urinary: <Droplets className="w-4 h-4" />,
+  nerve: <Sparkles className="w-4 h-4" />,
+}
 
 const timingOptions = [
   { id: 'morning', label: 'Morning', icon: Sun, time: '8:00 AM' },
@@ -24,6 +46,8 @@ export function AddMedicineDialog() {
   const [quantity, setQuantity] = useState("")
   const [instructions, setInstructions] = useState("")
   const [selectedTimings, setSelectedTimings] = useState<string[]>([])
+  const [category, setCategory] = useState<MedicineCategory | "">("")
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
 
   const toggleTiming = (timing: string) => {
     setSelectedTimings((prev) =>
@@ -44,6 +68,7 @@ export function AddMedicineDialog() {
       quantity: parseInt(quantity),
       totalQuantity: parseInt(quantity),
       startDate: new Date().toISOString().split('T')[0],
+      category: category || undefined,
     })
 
     // Reset form
@@ -52,6 +77,7 @@ export function AddMedicineDialog() {
     setQuantity("")
     setInstructions("")
     setSelectedTimings([])
+    setCategory("")
     setOpen(false)
   }
 
@@ -122,6 +148,64 @@ export function AddMedicineDialog() {
               onChange={(e) => setInstructions(e.target.value)}
               className="h-12 bg-secondary/50 border-border"
             />
+          </div>
+
+          {/* Category Selector */}
+          <div className="space-y-2">
+            <Label className="text-foreground">Category (Optional)</Label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                className="w-full h-12 px-4 flex items-center justify-between bg-secondary/50 border border-border rounded-md text-left"
+              >
+                {category ? (
+                  <div className="flex items-center gap-2">
+                    <div className={cn("w-6 h-6 rounded flex items-center justify-center", medicineCategories[category].color)}>
+                      {categoryIcons[category]}
+                    </div>
+                    <span className="text-foreground">{medicineCategories[category].name}</span>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground">Select category...</span>
+                )}
+                <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform", showCategoryDropdown && "rotate-180")} />
+              </button>
+              
+              {showCategoryDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCategory("")
+                      setShowCategoryDropdown(false)
+                    }}
+                    className="w-full px-4 py-2 text-left text-muted-foreground hover:bg-secondary/50 transition-colors"
+                  >
+                    No category
+                  </button>
+                  {categoryOptions.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        setCategory(opt.id)
+                        setShowCategoryDropdown(false)
+                      }}
+                      className={cn(
+                        "w-full px-4 py-2 flex items-center gap-2 hover:bg-secondary/50 transition-colors",
+                        category === opt.id && "bg-secondary"
+                      )}
+                    >
+                      <div className={cn("w-6 h-6 rounded flex items-center justify-center", opt.color)}>
+                        {categoryIcons[opt.id]}
+                      </div>
+                      <span className="text-foreground">{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="space-y-3">

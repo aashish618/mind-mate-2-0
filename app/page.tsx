@@ -9,8 +9,12 @@ import { StreakBanner } from "@/components/streak-banner"
 import { DashboardStats } from "@/components/dashboard-stats"
 import { Onboarding } from "@/components/onboarding"
 import { EmptyState } from "@/components/empty-state"
-import { Heart, Settings, Bell, Download, Phone } from "lucide-react"
+import { MedicineBrowser } from "@/components/medicine-browser"
+import { Heart, Settings, Bell, Download, Phone, Calendar, LayoutGrid, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+
+type ViewTab = 'today' | 'category' | 'timing'
 
 export default function Home() {
   const { 
@@ -23,6 +27,7 @@ export default function Home() {
   } = useMedicineStore()
   const [isOnboarded, setIsOnboarded] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [activeTab, setActiveTab] = useState<ViewTab>('today')
   
   useEffect(() => {
     setMounted(true)
@@ -73,11 +78,17 @@ export default function Home() {
   const nightDoses = todaysDoses.filter((d) => d.timing === 'night')
 
   const doseGroups = [
-    { label: 'Morning', doses: morningDoses },
-    { label: 'Afternoon', doses: afternoonDoses },
-    { label: 'Evening', doses: eveningDoses },
-    { label: 'Night', doses: nightDoses },
+    { label: 'Morning', time: '6 AM - 12 PM', doses: morningDoses },
+    { label: 'Afternoon', time: '12 PM - 5 PM', doses: afternoonDoses },
+    { label: 'Evening', time: '5 PM - 9 PM', doses: eveningDoses },
+    { label: 'Night', time: '9 PM - 6 AM', doses: nightDoses },
   ].filter((group) => group.doses.length > 0)
+
+  const tabs = [
+    { id: 'today' as const, label: "Today's Doses", icon: Calendar },
+    { id: 'category' as const, label: 'By Category', icon: LayoutGrid },
+    { id: 'timing' as const, label: 'By Timing', icon: Clock },
+  ]
 
   return (
     <main className="min-h-screen bg-background pb-24">
@@ -107,8 +118,8 @@ export default function Home() {
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         {/* Greeting */}
         <div className="space-y-1">
-          <h2 className="text-2xl font-bold text-foreground">
-            Hello, {userName}! 👋
+          <h2 className="text-2xl font-bold text-foreground text-balance">
+            Hello, {userName}!
           </h2>
           <p className="text-muted-foreground">
             {todaysDoses.length > 0
@@ -124,53 +135,96 @@ export default function Home() {
         {medicines.length > 0 && <StreakBanner />}
 
         {/* Quick Actions - Load Sample Data */}
-        <div className="flex flex-wrap gap-3">
-          {medicines.length === 0 && (
-            <Button 
-              variant="outline" 
-              onClick={() => loadSampleMedicines()}
-              className="flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Load 50 Common Medicines
-            </Button>
-          )}
-          {caregivers.length === 0 && (
-            <Button 
-              variant="outline" 
-              onClick={() => loadDefaultCaregivers()}
-              className="flex items-center gap-2"
-            >
-              <Phone className="w-4 h-4" />
-              Load Emergency Contacts
-            </Button>
-          )}
-        </div>
+        {(medicines.length === 0 || caregivers.length === 0) && (
+          <div className="flex flex-wrap gap-3">
+            {medicines.length === 0 && (
+              <Button 
+                variant="outline" 
+                onClick={() => loadSampleMedicines()}
+                className="flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Load 50 Common Medicines
+              </Button>
+            )}
+            {caregivers.length === 0 && (
+              <Button 
+                variant="outline" 
+                onClick={() => loadDefaultCaregivers()}
+                className="flex items-center gap-2"
+              >
+                <Phone className="w-4 h-4" />
+                Load Emergency Contacts
+              </Button>
+            )}
+          </div>
+        )}
 
         {/* Medicine List or Empty State */}
         {medicines.length === 0 ? (
           <EmptyState />
         ) : (
-          <div className="space-y-6">
-            {doseGroups.map((group) => (
-              <div key={group.label} className="space-y-3">
-                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                  {group.label}
-                </h3>
-                <div className="space-y-3">
-                  {group.doses.map((dose) => (
-                    <MedicineCard
-                      key={`${dose.medicine.id}-${dose.timing}`}
-                      medicine={dose.medicine}
-                      timing={dose.timing}
-                      log={dose.log}
-                      onFeelingLog={handleFeelingLog}
-                    />
-                  ))}
-                </div>
+          <>
+            {/* Tab Navigation */}
+            <div className="flex gap-2 p-1 bg-secondary/50 rounded-xl">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all",
+                    activeTab === tab.id
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <tab.icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Tab Content */}
+            {activeTab === 'today' && (
+              <div className="space-y-6">
+                {doseGroups.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    All doses completed for today!
+                  </div>
+                ) : (
+                  doseGroups.map((group) => (
+                    <div key={group.label} className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-medium text-foreground">
+                          {group.label}
+                        </h3>
+                        <span className="text-xs text-muted-foreground">{group.time}</span>
+                      </div>
+                      <div className="space-y-3">
+                        {group.doses.map((dose) => (
+                          <MedicineCard
+                            key={`${dose.medicine.id}-${dose.timing}`}
+                            medicine={dose.medicine}
+                            timing={dose.timing}
+                            log={dose.log}
+                            onFeelingLog={handleFeelingLog}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
-            ))}
-          </div>
+            )}
+
+            {activeTab === 'category' && (
+              <MedicineBrowser viewMode="category" />
+            )}
+
+            {activeTab === 'timing' && (
+              <MedicineBrowser viewMode="timing" />
+            )}
+          </>
         )}
       </div>
 

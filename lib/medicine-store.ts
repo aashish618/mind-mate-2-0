@@ -11,6 +11,7 @@ export interface Medicine {
   quantity: number
   totalQuantity: number
   startDate: string
+  category?: string
 }
 
 export interface DoseLog {
@@ -204,10 +205,14 @@ export const useMedicineStore = create<MedicineStore>()(
       },
 
       loadSampleMedicines: () => {
-        const newMedicines = sampleMedicines.map((m) => ({
-          ...m,
-          id: generateId(),
-        }))
+        const newMedicines = sampleMedicines.map((m) => {
+          const { category, ...rest } = m
+          return {
+            ...rest,
+            id: generateId(),
+            category,
+          }
+        })
         set((state) => ({ 
           medicines: [...state.medicines, ...newMedicines] 
         }))
