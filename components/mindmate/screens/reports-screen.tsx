@@ -5,16 +5,16 @@ import { useMindMateStore, type ReportStatus, type ReportCategory, type HealthRe
 import { BottomNav } from "../bottom-nav"
 import { cn } from "@/lib/utils"
 
-const categoryIcons: Record<ReportCategory, string> = {
-  blood: "🩸",
-  urine: "🧪",
-  lipid: "❤️",
-  thyroid: "🦋",
-  diabetes: "🍬",
-  liver: "🫁",
-  kidney: "🫘",
-  vitamin: "💊",
-  general: "📋"
+const categoryConfig: Record<ReportCategory, { icon: string; color: string; bgColor: string }> = {
+  blood: { icon: "🩸", color: "#DC2626", bgColor: "rgba(220, 38, 38, 0.1)" },
+  urine: { icon: "🧪", color: "#F59E0B", bgColor: "rgba(245, 158, 11, 0.1)" },
+  lipid: { icon: "❤️", color: "#EC4899", bgColor: "rgba(236, 72, 153, 0.1)" },
+  thyroid: { icon: "🦋", color: "#8B5CF6", bgColor: "rgba(139, 92, 246, 0.1)" },
+  diabetes: { icon: "🍯", color: "#F97316", bgColor: "rgba(249, 115, 22, 0.1)" },
+  liver: { icon: "🫀", color: "#7C3AED", bgColor: "rgba(124, 58, 237, 0.1)" },
+  kidney: { icon: "🫘", color: "#059669", bgColor: "rgba(5, 150, 105, 0.1)" },
+  vitamin: { icon: "💊", color: "#0EA5E9", bgColor: "rgba(14, 165, 233, 0.1)" },
+  general: { icon: "📋", color: "#6B7280", bgColor: "rgba(107, 114, 128, 0.1)" }
 }
 
 const categoryLabels: Record<ReportCategory, string> = {
@@ -29,10 +29,38 @@ const categoryLabels: Record<ReportCategory, string> = {
   general: "General"
 }
 
-const statusColors: Record<ReportStatus, { bg: string; text: string; border: string }> = {
-  normal: { bg: "bg-success/10", text: "text-success", border: "border-success/30" },
-  warning: { bg: "bg-warning/10", text: "text-warning-foreground", border: "border-warning/30" },
-  critical: { bg: "bg-destructive/10", text: "text-destructive", border: "border-destructive/30" }
+const statusConfig: Record<ReportStatus, { 
+  bg: string; 
+  text: string; 
+  border: string; 
+  emoji: string; 
+  label: string;
+  gradient: string;
+}> = {
+  normal: { 
+    bg: "bg-success/10", 
+    text: "text-success", 
+    border: "border-success/40",
+    emoji: "✅",
+    label: "All Good",
+    gradient: "from-success/20 to-success/5"
+  },
+  warning: { 
+    bg: "bg-warning/15", 
+    text: "text-warning-foreground", 
+    border: "border-warning/50",
+    emoji: "⚠️",
+    label: "Monitor",
+    gradient: "from-warning/20 to-warning/5"
+  },
+  critical: { 
+    bg: "bg-destructive/15", 
+    text: "text-destructive", 
+    border: "border-destructive/50",
+    emoji: "🚨",
+    label: "Attention",
+    gradient: "from-destructive/20 to-destructive/5"
+  }
 }
 
 function HealthScoreRing({ score, size = 120 }: { score: number; size?: number }) {
@@ -49,15 +77,25 @@ function HealthScoreRing({ score, size = 120 }: { score: number; size?: number }
   }, [score, circumference])
   
   const getScoreColor = (s: number) => {
-    if (s >= 80) return "#6B8E23"
-    if (s >= 60) return "#D4A574"
-    return "#C25450"
+    if (s >= 80) return "#22C55E"
+    if (s >= 60) return "#F59E0B"
+    if (s >= 40) return "#F97316"
+    return "#EF4444"
+  }
+  
+  const getScoreEmoji = (s: number) => {
+    if (s >= 90) return "🌟"
+    if (s >= 80) return "💚"
+    if (s >= 60) return "💛"
+    if (s >= 40) return "🟠"
+    return "🔴"
   }
   
   const getScoreLabel = (s: number) => {
-    if (s >= 80) return "Excellent"
-    if (s >= 60) return "Good"
-    if (s >= 40) return "Needs Attention"
+    if (s >= 90) return "Excellent!"
+    if (s >= 80) return "Very Good"
+    if (s >= 60) return "Fair"
+    if (s >= 40) return "Needs Work"
     return "Critical"
   }
   
@@ -87,7 +125,8 @@ function HealthScoreRing({ score, size = 120 }: { score: number; size?: number }
         />
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className="text-3xl font-bold text-foreground">{score}</span>
+        <span className="text-2xl">{getScoreEmoji(score)}</span>
+        <span className="text-2xl font-bold text-foreground">{score}</span>
         <span className="text-xs text-muted-foreground">{getScoreLabel(score)}</span>
       </div>
     </div>
@@ -116,6 +155,8 @@ function ReportCard({ report, onClick }: { report: HealthReport; onClick: () => 
   const criticalCount = report.parameters.filter(p => p.status === 'critical').length
   const warningCount = report.parameters.filter(p => p.status === 'warning').length
   const normalCount = report.parameters.filter(p => p.status === 'normal').length
+  const status = statusConfig[report.overallStatus]
+  const category = categoryConfig[report.category]
   
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
@@ -126,54 +167,68 @@ function ReportCard({ report, onClick }: { report: HealthReport; onClick: () => 
     <div 
       onClick={onClick}
       className={cn(
-        "bg-card rounded-xl p-4 border cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-md",
-        statusColors[report.overallStatus].border
+        "bg-card rounded-xl border-2 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg overflow-hidden",
+        status.border
       )}
     >
-      <div className="flex items-start gap-3">
-        <div className={cn(
-          "w-12 h-12 rounded-xl flex items-center justify-center text-2xl",
-          statusColors[report.overallStatus].bg
-        )}>
-          {categoryIcons[report.category]}
-        </div>
-        
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground truncate">{report.name}</h3>
-          <p className="text-sm text-muted-foreground">{formatDate(report.date)}</p>
-          <p className="text-xs text-muted-foreground">{report.lab}</p>
-        </div>
-        
-        <div className={cn(
-          "px-2 py-1 rounded-full text-xs font-medium capitalize",
-          statusColors[report.overallStatus].bg,
-          statusColors[report.overallStatus].text
-        )}>
-          {report.overallStatus}
-        </div>
-      </div>
+      {/* Status gradient strip at top */}
+      <div className={cn("h-1.5 w-full bg-gradient-to-r", status.gradient)} />
       
-      {/* Parameter Summary */}
-      <div className="mt-3 pt-3 border-t border-border flex items-center gap-4">
-        {criticalCount > 0 && (
-          <div className="flex items-center gap-1 text-xs">
-            <span className="w-2 h-2 rounded-full bg-destructive"></span>
-            <span className="text-muted-foreground">{criticalCount} Critical</span>
+      <div className="p-4">
+        <div className="flex items-start gap-3">
+          {/* Category icon with colored background */}
+          <div 
+            className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl shadow-sm"
+            style={{ backgroundColor: category.bgColor, border: `2px solid ${category.color}20` }}
+          >
+            {category.icon}
           </div>
-        )}
-        {warningCount > 0 && (
-          <div className="flex items-center gap-1 text-xs">
-            <span className="w-2 h-2 rounded-full bg-warning"></span>
-            <span className="text-muted-foreground">{warningCount} Warning</span>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="font-semibold text-foreground truncate">{report.name}</h3>
+              {/* Status badge with emoji */}
+              <div className={cn(
+                "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold shrink-0",
+                status.bg,
+                status.text
+              )}>
+                <span>{status.emoji}</span>
+                <span>{status.label}</span>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground mt-0.5">📅 {formatDate(report.date)}</p>
+            <p className="text-xs text-muted-foreground">🏥 {report.lab}</p>
           </div>
-        )}
-        {normalCount > 0 && (
-          <div className="flex items-center gap-1 text-xs">
-            <span className="w-2 h-2 rounded-full bg-success"></span>
-            <span className="text-muted-foreground">{normalCount} Normal</span>
+        </div>
+        
+        {/* Parameter Summary with colored indicators */}
+        <div className="mt-4 pt-3 border-t border-border">
+          <div className="flex items-center gap-3">
+            {criticalCount > 0 && (
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-destructive/10">
+                <span>🔴</span>
+                <span className="text-xs font-medium text-destructive">{criticalCount}</span>
+              </div>
+            )}
+            {warningCount > 0 && (
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-warning/10">
+                <span>🟡</span>
+                <span className="text-xs font-medium text-warning-foreground">{warningCount}</span>
+              </div>
+            )}
+            {normalCount > 0 && (
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-success/10">
+                <span>🟢</span>
+                <span className="text-xs font-medium text-success">{normalCount}</span>
+              </div>
+            )}
+            <div className="ml-auto flex items-center gap-1 text-primary text-sm font-medium">
+              <span>View Details</span>
+              <span>→</span>
+            </div>
           </div>
-        )}
-        <div className="ml-auto text-primary text-sm font-medium">View →</div>
+        </div>
       </div>
     </div>
   )
@@ -247,18 +302,34 @@ export function ReportsScreen() {
         
         {/* Filter Tabs */}
         <div className="p-4 flex gap-2 overflow-x-auto">
-          {(['all', 'critical', 'warning', 'normal'] as const).map((f) => (
+          {[
+            { key: 'all', label: '📊 All', count: reports.length },
+            { key: 'critical', label: '🚨 Critical', count: reports.filter(r => r.overallStatus === 'critical').length },
+            { key: 'warning', label: '⚠️ Warning', count: reports.filter(r => r.overallStatus === 'warning').length },
+            { key: 'normal', label: '✅ Normal', count: reports.filter(r => r.overallStatus === 'normal').length }
+          ].map((f) => (
             <button
-              key={f}
-              onClick={() => setFilter(f)}
+              key={f.key}
+              onClick={() => setFilter(f.key as 'all' | ReportStatus)}
               className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors",
-                filter === f 
-                  ? "bg-primary text-primary-foreground" 
+                "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1.5",
+                filter === f.key 
+                  ? f.key === 'critical' ? "bg-destructive text-destructive-foreground"
+                    : f.key === 'warning' ? "bg-warning text-warning-foreground"
+                    : f.key === 'normal' ? "bg-success text-success-foreground"
+                    : "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
               )}
             >
-              {f === 'all' ? 'All Reports' : f.charAt(0).toUpperCase() + f.slice(1)}
+              <span>{f.label}</span>
+              {f.count > 0 && (
+                <span className={cn(
+                  "w-5 h-5 rounded-full flex items-center justify-center text-xs",
+                  filter === f.key ? "bg-white/20" : "bg-foreground/10"
+                )}>
+                  {f.count}
+                </span>
+              )}
             </button>
           ))}
         </div>

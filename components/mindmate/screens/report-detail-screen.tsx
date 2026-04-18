@@ -4,10 +4,42 @@ import { useState } from "react"
 import { useMindMateStore, type ReportParameter, type ReportStatus } from "@/lib/mindmate-store"
 import { cn } from "@/lib/utils"
 
-const statusConfig: Record<ReportStatus, { bg: string; text: string; label: string; icon: string }> = {
-  normal: { bg: "bg-success", text: "text-success", label: "Normal", icon: "✓" },
-  warning: { bg: "bg-warning", text: "text-warning-foreground", label: "Needs Attention", icon: "!" },
-  critical: { bg: "bg-destructive", text: "text-destructive", label: "Critical", icon: "⚠" }
+const statusConfig: Record<ReportStatus, { 
+  bg: string; 
+  text: string; 
+  label: string; 
+  emoji: string;
+  indicator: string;
+  lightBg: string;
+  description: string;
+}> = {
+  normal: { 
+    bg: "bg-success", 
+    text: "text-success", 
+    label: "Normal", 
+    emoji: "✅",
+    indicator: "🟢",
+    lightBg: "bg-success/10",
+    description: "Within healthy range"
+  },
+  warning: { 
+    bg: "bg-warning", 
+    text: "text-warning-foreground", 
+    label: "Monitor", 
+    emoji: "⚠️",
+    indicator: "🟡",
+    lightBg: "bg-warning/10",
+    description: "Slightly outside optimal range"
+  },
+  critical: { 
+    bg: "bg-destructive", 
+    text: "text-destructive", 
+    label: "Critical", 
+    emoji: "🚨",
+    indicator: "🔴",
+    lightBg: "bg-destructive/10",
+    description: "Needs immediate attention"
+  }
 }
 
 function ParameterBar({ param }: { param: ReportParameter }) {
@@ -67,96 +99,145 @@ function ParameterBar({ param }: { param: ReportParameter }) {
 
 function ParameterCard({ param, isExpanded, onToggle }: { param: ReportParameter; isExpanded: boolean; onToggle: () => void }) {
   const config = statusConfig[param.status]
+  const isLow = param.value < param.min
+  const isHigh = param.value > param.max
+  
+  const getValueEmoji = () => {
+    if (param.status === 'normal') return "✅"
+    if (isLow) return "⬇️"
+    if (isHigh) return "⬆️"
+    return config.emoji
+  }
+  
+  const getValueLabel = () => {
+    if (param.status === 'normal') return "Normal"
+    if (isLow) return "Low"
+    if (isHigh) return "High"
+    return config.label
+  }
   
   return (
     <div 
       className={cn(
-        "bg-card rounded-xl border overflow-hidden transition-all",
-        param.status === 'critical' ? 'border-destructive/50 shadow-sm shadow-destructive/10' :
-        param.status === 'warning' ? 'border-warning/50' : 'border-border'
+        "bg-card rounded-xl border-2 overflow-hidden transition-all",
+        param.status === 'critical' ? 'border-destructive/50 shadow-md shadow-destructive/10' :
+        param.status === 'warning' ? 'border-warning/50 shadow-sm shadow-warning/5' : 'border-success/30'
       )}
     >
+      {/* Status strip */}
+      <div className={cn("h-1 w-full", config.bg)} />
+      
       <div 
-        className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+        className="p-4 cursor-pointer hover:bg-muted/30 transition-colors"
         onClick={onToggle}
       >
         <div className="flex items-start gap-3">
-          {/* Status Icon */}
+          {/* Status Icon with emoji */}
           <div className={cn(
-            "w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold",
-            config.bg
+            "w-12 h-12 rounded-xl flex flex-col items-center justify-center text-lg",
+            config.lightBg
           )}>
-            {config.icon}
+            <span>{config.indicator}</span>
           </div>
           
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1">
-              <h4 className="font-semibold text-foreground">{param.name}</h4>
-              <span className={cn("text-sm font-medium", config.text)}>
-                {param.value} {param.unit}
-              </span>
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div>
+                <h4 className="font-semibold text-foreground">{param.name}</h4>
+                <p className="text-xs text-muted-foreground">{config.description}</p>
+              </div>
+              {/* Value with direction indicator */}
+              <div className={cn(
+                "flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-semibold",
+                config.lightBg,
+                config.text
+              )}>
+                <span>{getValueEmoji()}</span>
+                <span>{param.value}</span>
+                <span className="text-xs font-normal">{param.unit}</span>
+              </div>
             </div>
             
             {/* Visual Bar */}
             <ParameterBar param={param} />
             
-            {/* Reference Range */}
-            <div className="flex justify-between mt-1.5 text-xs text-muted-foreground">
-              <span>Low: {"<"}{param.min}</span>
-              <span className="text-success">Normal: {param.min}-{param.max}</span>
-              <span>High: {">"}{param.max}</span>
+            {/* Reference Range with emojis */}
+            <div className="flex justify-between mt-2 text-xs">
+              <span className="flex items-center gap-1 text-destructive">
+                <span>⬇️</span>
+                <span>{"<"}{param.min}</span>
+              </span>
+              <span className="flex items-center gap-1 text-success font-medium">
+                <span>✅</span>
+                <span>{param.min}-{param.max}</span>
+              </span>
+              <span className="flex items-center gap-1 text-destructive">
+                <span>⬆️</span>
+                <span>{">"}{param.max}</span>
+              </span>
             </div>
           </div>
         </div>
         
         {/* Expand indicator */}
-        <div className="flex justify-center mt-2">
+        <div className="flex justify-center mt-3">
           <span className={cn(
-            "text-muted-foreground text-sm transition-transform",
+            "text-muted-foreground text-xs transition-transform flex items-center gap-1",
             isExpanded && "rotate-180"
           )}>
-            ▼
+            {isExpanded ? "Hide details" : "Tap for details"} ▼
           </span>
         </div>
       </div>
       
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="px-4 pb-4 pt-2 border-t border-border bg-muted/30 animate-in slide-in-from-top-2 duration-200">
+        <div className="px-4 pb-4 pt-3 border-t border-border bg-muted/20 animate-in slide-in-from-top-2 duration-200">
           <div className="space-y-3">
-            <div>
-              <h5 className="text-xs font-medium text-muted-foreground uppercase mb-1">What is this?</h5>
-              <p className="text-sm text-foreground">{param.description}</p>
+            {/* What is this */}
+            <div className="flex items-start gap-2 p-3 bg-card rounded-lg border border-border">
+              <span className="text-lg">📖</span>
+              <div>
+                <h5 className="text-xs font-semibold text-muted-foreground uppercase mb-1">What is {param.name}?</h5>
+                <p className="text-sm text-foreground">{param.description}</p>
+              </div>
             </div>
             
+            {/* Recommendation */}
             {param.recommendation && (
               <div className={cn(
-                "p-3 rounded-lg",
-                param.status === 'critical' ? 'bg-destructive/10' : 
-                param.status === 'warning' ? 'bg-warning/10' : 'bg-success/10'
+                "flex items-start gap-2 p-3 rounded-lg border",
+                param.status === 'critical' ? 'bg-destructive/5 border-destructive/30' : 
+                param.status === 'warning' ? 'bg-warning/5 border-warning/30' : 'bg-success/5 border-success/30'
               )}>
-                <h5 className="text-xs font-medium text-muted-foreground uppercase mb-1">Recommendation</h5>
-                <p className={cn(
-                  "text-sm font-medium",
-                  param.status === 'critical' ? 'text-destructive' : 
-                  param.status === 'warning' ? 'text-warning-foreground' : 'text-success'
-                )}>
-                  {param.recommendation}
-                </p>
+                <span className="text-lg">{param.status === 'critical' ? '🩺' : param.status === 'warning' ? '💡' : '👍'}</span>
+                <div>
+                  <h5 className="text-xs font-semibold text-muted-foreground uppercase mb-1">What You Can Do</h5>
+                  <p className={cn(
+                    "text-sm font-medium",
+                    param.status === 'critical' ? 'text-destructive' : 
+                    param.status === 'warning' ? 'text-warning-foreground' : 'text-success'
+                  )}>
+                    {param.recommendation}
+                  </p>
+                </div>
               </div>
             )}
             
             {/* Simple explanation */}
-            <div className="p-3 bg-primary/5 rounded-lg">
-              <h5 className="text-xs font-medium text-muted-foreground uppercase mb-1">In Simple Words</h5>
-              <p className="text-sm text-foreground">
-                {param.status === 'normal' 
-                  ? `Your ${param.name.toLowerCase()} level is healthy and within the expected range. Keep up the good work!`
-                  : param.status === 'warning'
-                  ? `Your ${param.name.toLowerCase()} is slightly outside the ideal range. With some adjustments, you can improve this.`
-                  : `Your ${param.name.toLowerCase()} needs immediate attention. Please follow up with your doctor and follow the recommendations.`
-                }
-              </p>
+            <div className="flex items-start gap-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
+              <span className="text-lg">{param.status === 'normal' ? '🎉' : param.status === 'warning' ? '🤔' : '⚡'}</span>
+              <div>
+                <h5 className="text-xs font-semibold text-muted-foreground uppercase mb-1">In Simple Words</h5>
+                <p className="text-sm text-foreground">
+                  {param.status === 'normal' 
+                    ? `Great news! Your ${param.name.toLowerCase()} is perfectly healthy. Keep doing what you're doing! 💪`
+                    : param.status === 'warning'
+                    ? `Your ${param.name.toLowerCase()} is ${isLow ? 'slightly low' : 'slightly elevated'}. Small lifestyle changes can help bring it back to normal. 🌱`
+                    : `Your ${param.name.toLowerCase()} is ${isLow ? 'too low' : 'too high'} and needs attention. Please consult your doctor soon. 🏥`
+                  }
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -248,14 +329,20 @@ export function ReportDetailScreen() {
           report.overallStatus === 'critical' ? 'bg-destructive/5 border-destructive/20' :
           report.overallStatus === 'warning' ? 'bg-warning/5 border-warning/20' : 'bg-success/5 border-success/20'
         )}>
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-3">
             <span className={cn(
-              "px-3 py-1 rounded-full text-sm font-medium capitalize",
+              "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold",
               report.overallStatus === 'critical' ? 'bg-destructive text-destructive-foreground' :
               report.overallStatus === 'warning' ? 'bg-warning text-warning-foreground' : 'bg-success text-success-foreground'
             )}>
-              {report.overallStatus === 'critical' ? '⚠ Attention Required' :
-               report.overallStatus === 'warning' ? '! Needs Monitoring' : '✓ All Good'}
+              <span className="text-base">
+                {report.overallStatus === 'critical' ? '🚨' :
+                 report.overallStatus === 'warning' ? '⚠️' : '✅'}
+              </span>
+              <span>
+                {report.overallStatus === 'critical' ? 'Action Required' :
+                 report.overallStatus === 'warning' ? 'Monitor Closely' : 'Looking Good!'}
+              </span>
             </span>
           </div>
           
@@ -272,23 +359,26 @@ export function ReportDetailScreen() {
         
         {/* Quick Stats */}
         <div className="p-4 grid grid-cols-3 gap-3">
-          <div className="bg-destructive/10 rounded-xl p-3 text-center">
+          <div className="bg-destructive/10 rounded-xl p-3 text-center border border-destructive/20">
+            <div className="text-xl mb-1">🚨</div>
             <div className="text-2xl font-bold text-destructive">
               {report.parameters.filter(p => p.status === 'critical').length}
             </div>
-            <div className="text-xs text-muted-foreground">Critical</div>
+            <div className="text-xs text-muted-foreground font-medium">Critical</div>
           </div>
-          <div className="bg-warning/10 rounded-xl p-3 text-center">
-            <div className="text-2xl font-bold" style={{ color: '#D4A574' }}>
+          <div className="bg-warning/10 rounded-xl p-3 text-center border border-warning/20">
+            <div className="text-xl mb-1">⚠️</div>
+            <div className="text-2xl font-bold text-warning-foreground">
               {report.parameters.filter(p => p.status === 'warning').length}
             </div>
-            <div className="text-xs text-muted-foreground">Warning</div>
+            <div className="text-xs text-muted-foreground font-medium">Monitor</div>
           </div>
-          <div className="bg-success/10 rounded-xl p-3 text-center">
+          <div className="bg-success/10 rounded-xl p-3 text-center border border-success/20">
+            <div className="text-xl mb-1">✅</div>
             <div className="text-2xl font-bold text-success">
               {report.parameters.filter(p => p.status === 'normal').length}
             </div>
-            <div className="text-xs text-muted-foreground">Normal</div>
+            <div className="text-xs text-muted-foreground font-medium">Normal</div>
           </div>
         </div>
         
@@ -332,21 +422,49 @@ export function ReportDetailScreen() {
         
         {/* Understanding Section */}
         <div className="p-4 bg-card border-t border-border">
-          <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-            <span>💡</span> How to Read This Report
+          <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+            <span>📚</span> Understanding Your Results
           </h3>
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-success"></span>
-              <span><strong className="text-foreground">Green/Normal:</strong> Value is within healthy range</span>
+          <div className="grid grid-cols-1 gap-3">
+            <div className="flex items-center gap-3 p-3 bg-success/10 rounded-xl border border-success/20">
+              <span className="text-2xl">🟢</span>
+              <div>
+                <p className="font-semibold text-success">Normal / Healthy</p>
+                <p className="text-xs text-muted-foreground">Your value is within the optimal range</p>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-warning"></span>
-              <span><strong className="text-foreground">Yellow/Warning:</strong> Slightly outside range, monitor it</span>
+            <div className="flex items-center gap-3 p-3 bg-warning/10 rounded-xl border border-warning/20">
+              <span className="text-2xl">🟡</span>
+              <div>
+                <p className="font-semibold text-warning-foreground">Monitor / Warning</p>
+                <p className="text-xs text-muted-foreground">Slightly outside range, keep an eye on it</p>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-destructive"></span>
-              <span><strong className="text-foreground">Red/Critical:</strong> Needs attention, consult your doctor</span>
+            <div className="flex items-center gap-3 p-3 bg-destructive/10 rounded-xl border border-destructive/20">
+              <span className="text-2xl">🔴</span>
+              <div>
+                <p className="font-semibold text-destructive">Critical / Action Needed</p>
+                <p className="text-xs text-muted-foreground">Consult your doctor for guidance</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Direction indicators */}
+          <div className="mt-4 pt-4 border-t border-border">
+            <h4 className="text-sm font-medium text-muted-foreground mb-2">Value Direction Indicators</h4>
+            <div className="flex gap-4 text-sm">
+              <div className="flex items-center gap-1">
+                <span>⬇️</span>
+                <span className="text-muted-foreground">Below normal</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span>✅</span>
+                <span className="text-muted-foreground">In range</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span>⬆️</span>
+                <span className="text-muted-foreground">Above normal</span>
+              </div>
             </div>
           </div>
         </div>
