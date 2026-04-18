@@ -5,6 +5,87 @@ import { useMindMateStore, type ReportStatus, type ReportCategory, type HealthRe
 import { BottomNav } from "../bottom-nav"
 import { cn } from "@/lib/utils"
 
+// Predefined parameter templates for each category
+type ParameterTemplate = {
+  name: string
+  unit: string
+  min: number
+  max: number
+  description: string
+  lowRecommendation: string
+  highRecommendation: string
+}
+
+const categoryParameterTemplates: Record<ReportCategory, ParameterTemplate[]> = {
+  blood: [
+    { name: 'Hemoglobin', unit: 'g/dL', min: 12, max: 16, description: 'Oxygen-carrying protein in red blood cells', lowRecommendation: 'Include iron-rich foods like spinach, lentils, and red meat', highRecommendation: 'Stay hydrated and consult doctor if persistently high' },
+    { name: 'RBC Count', unit: 'million/uL', min: 4.0, max: 5.5, description: 'Red blood cell count in your blood', lowRecommendation: 'Consider iron and B12 supplements after consulting doctor', highRecommendation: 'May indicate dehydration or other conditions, consult doctor' },
+    { name: 'WBC Count', unit: 'thousand/uL', min: 4.0, max: 11.0, description: 'White blood cells that fight infection', lowRecommendation: 'Boost immunity with vitamin C and zinc-rich foods', highRecommendation: 'May indicate infection or inflammation, monitor closely' },
+    { name: 'Platelets', unit: 'thousand/uL', min: 150, max: 400, description: 'Cells that help blood clot', lowRecommendation: 'Avoid blood thinners, eat leafy greens', highRecommendation: 'Stay hydrated, avoid smoking' },
+    { name: 'Hematocrit', unit: '%', min: 36, max: 48, description: 'Percentage of blood made up of red blood cells', lowRecommendation: 'May indicate anemia, increase iron intake', highRecommendation: 'Stay well hydrated' },
+  ],
+  lipid: [
+    { name: 'Total Cholesterol', unit: 'mg/dL', min: 0, max: 200, description: 'Total amount of cholesterol in blood', lowRecommendation: 'Healthy fats are okay in moderation', highRecommendation: 'Reduce fried foods, exercise regularly' },
+    { name: 'LDL Cholesterol', unit: 'mg/dL', min: 0, max: 100, description: 'Bad cholesterol that can clog arteries', lowRecommendation: 'No action needed, this is good', highRecommendation: 'Reduce saturated fats, add more fiber to diet' },
+    { name: 'HDL Cholesterol', unit: 'mg/dL', min: 40, max: 100, description: 'Good cholesterol that protects heart', lowRecommendation: 'Exercise more, eat healthy fats like olive oil and nuts', highRecommendation: 'Usually not a concern, keep exercising' },
+    { name: 'Triglycerides', unit: 'mg/dL', min: 0, max: 150, description: 'Fat in your blood from food', lowRecommendation: 'Usually not a concern', highRecommendation: 'Limit sugar, alcohol and refined carbs' },
+    { name: 'VLDL Cholesterol', unit: 'mg/dL', min: 0, max: 30, description: 'Very low density lipoprotein', lowRecommendation: 'No action needed', highRecommendation: 'Reduce fatty foods and increase exercise' },
+  ],
+  thyroid: [
+    { name: 'TSH', unit: 'mIU/L', min: 0.4, max: 4.0, description: 'Thyroid stimulating hormone', lowRecommendation: 'May indicate overactive thyroid, consult doctor', highRecommendation: 'May indicate underactive thyroid, consult doctor' },
+    { name: 'T3 (Total)', unit: 'ng/dL', min: 80, max: 200, description: 'Active thyroid hormone', lowRecommendation: 'May indicate hypothyroidism', highRecommendation: 'May indicate hyperthyroidism' },
+    { name: 'T4 (Total)', unit: 'ug/dL', min: 4.5, max: 12.0, description: 'Main thyroid hormone', lowRecommendation: 'Thyroid may be underactive', highRecommendation: 'Thyroid may be overactive' },
+    { name: 'Free T3', unit: 'pg/mL', min: 2.3, max: 4.2, description: 'Unbound active thyroid hormone', lowRecommendation: 'Consult endocrinologist', highRecommendation: 'Consult endocrinologist' },
+    { name: 'Free T4', unit: 'ng/dL', min: 0.8, max: 1.8, description: 'Unbound thyroxine hormone', lowRecommendation: 'May need thyroid medication', highRecommendation: 'May need to reduce thyroid activity' },
+  ],
+  diabetes: [
+    { name: 'Fasting Glucose', unit: 'mg/dL', min: 70, max: 100, description: 'Blood sugar after 8-12 hours fasting', lowRecommendation: 'Eat regular meals, avoid skipping breakfast', highRecommendation: 'Reduce sugar intake, exercise regularly' },
+    { name: 'HbA1c', unit: '%', min: 4.0, max: 5.6, description: 'Average blood sugar over 3 months', lowRecommendation: 'Ensure adequate nutrition', highRecommendation: 'Control carb intake, increase physical activity' },
+    { name: 'Post-Prandial Glucose', unit: 'mg/dL', min: 70, max: 140, description: 'Blood sugar 2 hours after eating', lowRecommendation: 'Eat balanced meals', highRecommendation: 'Take a 10-minute walk after meals' },
+    { name: 'Fasting Insulin', unit: 'uIU/mL', min: 2.6, max: 24.9, description: 'Insulin level when fasting', lowRecommendation: 'Consult doctor about insulin production', highRecommendation: 'May indicate insulin resistance, lose weight if overweight' },
+  ],
+  liver: [
+    { name: 'ALT (SGPT)', unit: 'U/L', min: 7, max: 56, description: 'Liver enzyme for protein metabolism', lowRecommendation: 'Usually not a concern', highRecommendation: 'Avoid alcohol, fatty foods, and unnecessary medications' },
+    { name: 'AST (SGOT)', unit: 'U/L', min: 10, max: 40, description: 'Enzyme found in liver and heart', lowRecommendation: 'Usually not a concern', highRecommendation: 'May indicate liver stress, reduce alcohol' },
+    { name: 'ALP', unit: 'U/L', min: 44, max: 147, description: 'Alkaline phosphatase enzyme', lowRecommendation: 'May indicate nutritional deficiency', highRecommendation: 'May indicate liver or bone issues' },
+    { name: 'Bilirubin (Total)', unit: 'mg/dL', min: 0.1, max: 1.2, description: 'Waste product from red blood cell breakdown', lowRecommendation: 'Usually not a concern', highRecommendation: 'May cause jaundice, consult doctor' },
+    { name: 'Albumin', unit: 'g/dL', min: 3.5, max: 5.0, description: 'Protein made by liver', lowRecommendation: 'Increase protein intake', highRecommendation: 'Stay hydrated' },
+  ],
+  kidney: [
+    { name: 'Creatinine', unit: 'mg/dL', min: 0.6, max: 1.2, description: 'Waste product filtered by kidneys', lowRecommendation: 'May indicate low muscle mass', highRecommendation: 'Stay hydrated, limit protein if advised' },
+    { name: 'BUN', unit: 'mg/dL', min: 7, max: 20, description: 'Blood urea nitrogen from protein breakdown', lowRecommendation: 'May indicate low protein diet', highRecommendation: 'Drink more water, reduce protein intake' },
+    { name: 'Uric Acid', unit: 'mg/dL', min: 3.5, max: 7.2, description: 'Waste from digesting certain foods', lowRecommendation: 'Usually not a concern', highRecommendation: 'Avoid red meat, shellfish, and alcohol' },
+    { name: 'eGFR', unit: 'mL/min', min: 90, max: 120, description: 'Estimated kidney filtration rate', lowRecommendation: 'May indicate reduced kidney function, consult doctor', highRecommendation: 'Usually not a concern' },
+  ],
+  vitamin: [
+    { name: 'Vitamin D', unit: 'ng/mL', min: 30, max: 100, description: 'Essential for bones and immunity', lowRecommendation: 'Get 15-20 mins morning sunlight, consider supplements', highRecommendation: 'Reduce supplements if taking' },
+    { name: 'Vitamin B12', unit: 'pg/mL', min: 200, max: 900, description: 'Essential for nerves and blood cells', lowRecommendation: 'Eat more eggs, dairy, meat or take supplements', highRecommendation: 'Usually not harmful, reduce supplements' },
+    { name: 'Iron', unit: 'ug/dL', min: 60, max: 170, description: 'Mineral for hemoglobin production', lowRecommendation: 'Eat iron-rich foods with vitamin C', highRecommendation: 'Avoid iron supplements, consult doctor' },
+    { name: 'Ferritin', unit: 'ng/mL', min: 12, max: 300, description: 'Iron storage protein', lowRecommendation: 'Increase iron intake', highRecommendation: 'May indicate inflammation or iron overload' },
+    { name: 'Folate', unit: 'ng/mL', min: 2.7, max: 17.0, description: 'B vitamin for cell growth', lowRecommendation: 'Eat leafy greens, beans, fortified cereals', highRecommendation: 'Reduce folic acid supplements' },
+    { name: 'Calcium', unit: 'mg/dL', min: 8.5, max: 10.5, description: 'Mineral for bones and muscles', lowRecommendation: 'Increase dairy, leafy greens, consider supplements', highRecommendation: 'Reduce calcium supplements, stay hydrated' },
+  ],
+  urine: [
+    { name: 'pH Level', unit: '', min: 4.5, max: 8.0, description: 'Acidity/alkalinity of urine', lowRecommendation: 'Drink more water, eat less protein', highRecommendation: 'May indicate UTI or kidney issues' },
+    { name: 'Specific Gravity', unit: '', min: 1.005, max: 1.030, description: 'Concentration of urine', lowRecommendation: 'May indicate overhydration or kidney issue', highRecommendation: 'Drink more water, may be dehydrated' },
+    { name: 'Protein', unit: 'mg/dL', min: 0, max: 14, description: 'Protein in urine', lowRecommendation: 'Normal, no action needed', highRecommendation: 'May indicate kidney stress, consult doctor' },
+    { name: 'Glucose', unit: 'mg/dL', min: 0, max: 15, description: 'Sugar in urine', lowRecommendation: 'Normal, no action needed', highRecommendation: 'May indicate diabetes, check blood sugar' },
+  ],
+  general: [
+    { name: 'Blood Pressure (Systolic)', unit: 'mmHg', min: 90, max: 120, description: 'Pressure when heart beats', lowRecommendation: 'Increase salt and fluid intake if symptomatic', highRecommendation: 'Reduce salt, exercise, manage stress' },
+    { name: 'Blood Pressure (Diastolic)', unit: 'mmHg', min: 60, max: 80, description: 'Pressure between heartbeats', lowRecommendation: 'Stay hydrated, rise slowly from sitting', highRecommendation: 'Lifestyle changes and possibly medication needed' },
+    { name: 'Heart Rate', unit: 'bpm', min: 60, max: 100, description: 'Heartbeats per minute', lowRecommendation: 'May be athletic, consult if symptomatic', highRecommendation: 'Practice relaxation, reduce caffeine' },
+    { name: 'BMI', unit: 'kg/m2', min: 18.5, max: 24.9, description: 'Body Mass Index', lowRecommendation: 'Increase caloric intake with nutritious foods', highRecommendation: 'Focus on balanced diet and regular exercise' },
+  ],
+}
+
+// Type for parameter values input
+type ParameterValueInput = {
+  template: ParameterTemplate
+  value: string
+  included: boolean
+}
+
 // Upload Modal Component
 function UploadReportModal({ 
   isOpen, 
@@ -27,13 +108,74 @@ function UploadReportModal({
   const [lab, setLab] = useState('')
   const [doctor, setDoctor] = useState('')
   const [parameters, setParameters] = useState<ReportParameter[]>([])
-  const [newParam, setNewParam] = useState({
-    name: '',
-    value: '',
-    unit: '',
-    min: '',
-    max: ''
-  })
+  
+  // Parameter value inputs based on category templates
+  const [parameterInputs, setParameterInputs] = useState<ParameterValueInput[]>([])
+  
+  // Initialize parameter inputs when category changes
+  const initializeParameterInputs = (cat: ReportCategory) => {
+    const templates = categoryParameterTemplates[cat]
+    setParameterInputs(templates.map(template => ({
+      template,
+      value: '',
+      included: true
+    })))
+  }
+  
+  // Handle category change
+  const handleCategoryChange = (newCategory: ReportCategory) => {
+    setCategory(newCategory)
+    initializeParameterInputs(newCategory)
+    // Auto-set report name based on category
+    setReportName(categoryLabels[newCategory])
+  }
+  
+  // Update parameter value
+  const updateParameterValue = (index: number, value: string) => {
+    setParameterInputs(prev => prev.map((p, i) => 
+      i === index ? { ...p, value } : p
+    ))
+  }
+  
+  // Toggle parameter inclusion
+  const toggleParameterIncluded = (index: number) => {
+    setParameterInputs(prev => prev.map((p, i) => 
+      i === index ? { ...p, included: !p.included } : p
+    ))
+  }
+  
+  // Build final parameters from inputs
+  const buildParameters = (): ReportParameter[] => {
+    return parameterInputs
+      .filter(p => p.included && p.value !== '')
+      .map(p => {
+        const value = parseFloat(p.value)
+        const { min, max, name, unit, description, lowRecommendation, highRecommendation } = p.template
+        
+        let status: ReportStatus = 'normal'
+        const isLow = value < min
+        const isHigh = value > max
+        
+        if (value < min * 0.8 || value > max * 1.2) status = 'critical'
+        else if (isLow || isHigh) status = 'warning'
+        
+        const param: ReportParameter = {
+          name,
+          value,
+          unit,
+          min,
+          max,
+          status,
+          description,
+        }
+        
+        if (status !== 'normal') {
+          param.recommendation = isLow ? lowRecommendation : highRecommendation
+        }
+        
+        return param
+      })
+  }
   
   const resetForm = () => {
     setStep('method')
@@ -45,7 +187,7 @@ function UploadReportModal({
     setLab('')
     setDoctor('')
     setParameters([])
-    setNewParam({ name: '', value: '', unit: '', min: '', max: '' })
+    setParameterInputs([])
   }
   
   const handleClose = () => {
@@ -57,60 +199,25 @@ function UploadReportModal({
     const file = e.target.files?.[0]
     if (file) {
       setFileName(file.name)
-      // Simulate parsing - in real app, you'd parse the PDF/image
-      // For now, we'll set some demo data
       setReportName('Uploaded Report')
       setCategory('general')
+      initializeParameterInputs('general')
       setLab('Lab from document')
       setStep('details')
     }
   }
   
-  const addParameter = () => {
-    if (newParam.name && newParam.value && newParam.min && newParam.max) {
-      const value = parseFloat(newParam.value)
-      const min = parseFloat(newParam.min)
-      const max = parseFloat(newParam.max)
-      
-      let status: ReportStatus = 'normal'
-      if (value < min * 0.8 || value > max * 1.2) status = 'critical'
-      else if (value < min || value > max) status = 'warning'
-      
-      const param: ReportParameter = {
-        name: newParam.name,
-        value,
-        unit: newParam.unit || '-',
-        min,
-        max,
-        status,
-        description: `${newParam.name} measurement`
-      }
-      
-      if (status !== 'normal') {
-        param.recommendation = status === 'critical' 
-          ? `Consult your doctor about your ${newParam.name.toLowerCase()} levels.`
-          : `Monitor your ${newParam.name.toLowerCase()} and consider lifestyle adjustments.`
-      }
-      
-      setParameters([...parameters, param])
-      setNewParam({ name: '', value: '', unit: '', min: '', max: '' })
-    }
-  }
-  
-  const removeParameter = (index: number) => {
-    setParameters(parameters.filter((_, i) => i !== index))
-  }
-  
-  const calculateOverallStatus = (): ReportStatus => {
-    if (parameters.some(p => p.status === 'critical')) return 'critical'
-    if (parameters.some(p => p.status === 'warning')) return 'warning'
+  const calculateOverallStatus = (params: ReportParameter[]): ReportStatus => {
+    if (params.some(p => p.status === 'critical')) return 'critical'
+    if (params.some(p => p.status === 'warning')) return 'warning'
     return 'normal'
   }
   
   const handleSubmit = () => {
-    const overallStatus = calculateOverallStatus()
-    const criticalCount = parameters.filter(p => p.status === 'critical').length
-    const warningCount = parameters.filter(p => p.status === 'warning').length
+    const finalParameters = buildParameters()
+    const overallStatus = calculateOverallStatus(finalParameters)
+    const criticalCount = finalParameters.filter(p => p.status === 'critical').length
+    const warningCount = finalParameters.filter(p => p.status === 'warning').length
     
     const report: Omit<HealthReport, 'id'> = {
       name: reportName,
@@ -118,7 +225,7 @@ function UploadReportModal({
       date,
       lab,
       doctor: doctor || undefined,
-      parameters,
+      parameters: finalParameters,
       overallStatus,
       summary: criticalCount > 0 
         ? `${criticalCount} parameter(s) need immediate attention. Please consult your doctor.`
@@ -171,15 +278,20 @@ function UploadReportModal({
               
               {/* Manual Entry */}
               <button
-                onClick={() => { setUploadMethod('manual'); setStep('details') }}
+                onClick={() => { 
+                  setUploadMethod('manual')
+                  initializeParameterInputs('blood')
+                  setReportName(categoryLabels['blood'])
+                  setStep('details') 
+                }}
                 className="w-full p-4 bg-muted/50 hover:bg-muted rounded-xl border border-border flex items-center gap-4 transition-colors"
               >
                 <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center text-2xl">
                   ✍️
                 </div>
                 <div className="text-left flex-1">
-                  <h3 className="font-semibold text-foreground">Manual Entry</h3>
-                  <p className="text-sm text-muted-foreground">Enter report details yourself</p>
+                  <h3 className="font-semibold text-foreground">Enter Report</h3>
+                  <p className="text-sm text-muted-foreground">Select test type and enter your values</p>
                 </div>
                 <span className="text-muted-foreground">→</span>
               </button>
@@ -249,12 +361,13 @@ function UploadReportModal({
               
               {/* Category */}
               <div>
-                <label className="text-sm font-medium text-foreground mb-1.5 block">Category *</label>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">Report Type *</label>
+                <p className="text-xs text-muted-foreground mb-2">Select the type and we will show you the relevant parameters</p>
                 <div className="grid grid-cols-3 gap-2">
                   {(Object.keys(categoryConfig) as ReportCategory[]).map((cat) => (
                     <button
                       key={cat}
-                      onClick={() => setCategory(cat)}
+                      onClick={() => handleCategoryChange(cat)}
                       className={cn(
                         "p-2 rounded-xl border text-center transition-all",
                         category === cat 
@@ -309,114 +422,134 @@ function UploadReportModal({
                 disabled={!reportName || !lab || !date}
                 className="w-full mt-4 p-4 gradient-primary text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               >
-                Next: Add Parameters
+                Next: Enter Your Values
               </button>
             </div>
           )}
           
           {step === 'parameters' && (
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Add the test parameters from your report. The status will be calculated automatically.
-              </p>
-              
-              {/* Add Parameter Form */}
-              <div className="p-4 bg-muted/50 rounded-xl border border-border space-y-3">
-                <h4 className="font-medium text-foreground text-sm">Add Parameter</h4>
-                
-                <input
-                  type="text"
-                  value={newParam.name}
-                  onChange={(e) => setNewParam({...newParam, name: e.target.value})}
-                  placeholder="Parameter name (e.g., Hemoglobin)"
-                  className="w-full p-2.5 bg-card rounded-lg border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
-                
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    value={newParam.value}
-                    onChange={(e) => setNewParam({...newParam, value: e.target.value})}
-                    placeholder="Your value"
-                    className="w-full p-2.5 bg-card rounded-lg border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  />
-                  <input
-                    type="text"
-                    value={newParam.unit}
-                    onChange={(e) => setNewParam({...newParam, unit: e.target.value})}
-                    placeholder="Unit (e.g., g/dL)"
-                    className="w-full p-2.5 bg-card rounded-lg border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    value={newParam.min}
-                    onChange={(e) => setNewParam({...newParam, min: e.target.value})}
-                    placeholder="Min normal"
-                    className="w-full p-2.5 bg-card rounded-lg border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  />
-                  <input
-                    type="number"
-                    value={newParam.max}
-                    onChange={(e) => setNewParam({...newParam, max: e.target.value})}
-                    placeholder="Max normal"
-                    className="w-full p-2.5 bg-card rounded-lg border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  />
-                </div>
-                
-                <button
-                  onClick={addParameter}
-                  disabled={!newParam.name || !newParam.value || !newParam.min || !newParam.max}
-                  className="w-full p-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  + Add Parameter
-                </button>
+              <div className="bg-primary/5 rounded-xl p-3 border border-primary/20">
+                <p className="text-sm text-foreground font-medium">Enter your test values</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Just fill in the values from your report. We have pre-filled the normal ranges for you.
+                </p>
               </div>
               
-              {/* Parameters List */}
-              {parameters.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-medium text-foreground text-sm">Added Parameters ({parameters.length})</h4>
-                  {parameters.map((param, index) => (
+              {/* Parameter Input Cards */}
+              <div className="space-y-3">
+                {parameterInputs.map((paramInput, index) => {
+                  const { template, value, included } = paramInput
+                  const numValue = parseFloat(value)
+                  const hasValue = value !== '' && !isNaN(numValue)
+                  
+                  // Calculate status for preview
+                  let previewStatus: ReportStatus = 'normal'
+                  if (hasValue) {
+                    if (numValue < template.min * 0.8 || numValue > template.max * 1.2) previewStatus = 'critical'
+                    else if (numValue < template.min || numValue > template.max) previewStatus = 'warning'
+                  }
+                  
+                  const isLow = hasValue && numValue < template.min
+                  const isHigh = hasValue && numValue > template.max
+                  
+                  return (
                     <div 
-                      key={index}
+                      key={template.name}
                       className={cn(
-                        "p-3 rounded-xl border flex items-center justify-between",
-                        param.status === 'critical' ? 'bg-destructive/10 border-destructive/30' :
-                        param.status === 'warning' ? 'bg-warning/10 border-warning/30' : 'bg-success/10 border-success/30'
+                        "rounded-xl border-2 overflow-hidden transition-all",
+                        !included ? "opacity-50 border-border" :
+                        hasValue && previewStatus === 'critical' ? "border-destructive/50 bg-destructive/5" :
+                        hasValue && previewStatus === 'warning' ? "border-warning/50 bg-warning/5" :
+                        hasValue ? "border-success/50 bg-success/5" : "border-border bg-card"
                       )}
                     >
-                      <div>
-                        <p className="font-medium text-foreground text-sm">{param.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {param.value} {param.unit} (Range: {param.min}-{param.max})
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={cn(
-                          "px-2 py-0.5 rounded-full text-xs font-medium",
-                          param.status === 'critical' ? 'bg-destructive text-destructive-foreground' :
-                          param.status === 'warning' ? 'bg-warning text-warning-foreground' : 'bg-success text-success-foreground'
-                        )}>
-                          {param.status === 'critical' ? '🔴' : param.status === 'warning' ? '🟡' : '🟢'}
-                        </span>
-                        <button 
-                          onClick={() => removeParameter(index)}
-                          className="w-6 h-6 rounded-full bg-muted hover:bg-destructive/20 flex items-center justify-center text-xs text-muted-foreground hover:text-destructive transition-colors"
-                        >
-                          ×
-                        </button>
+                      <div className="p-3">
+                        <div className="flex items-start gap-3">
+                          {/* Toggle checkbox */}
+                          <button
+                            onClick={() => toggleParameterIncluded(index)}
+                            className={cn(
+                              "w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors",
+                              included ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground"
+                            )}
+                          >
+                            {included && <span className="text-xs">✓</span>}
+                          </button>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <h4 className="font-medium text-foreground text-sm">{template.name}</h4>
+                              {hasValue && included && (
+                                <span className={cn(
+                                  "text-xs px-2 py-0.5 rounded-full font-medium",
+                                  previewStatus === 'critical' ? "bg-destructive text-destructive-foreground" :
+                                  previewStatus === 'warning' ? "bg-warning text-warning-foreground" : "bg-success text-success-foreground"
+                                )}>
+                                  {previewStatus === 'critical' ? (isLow ? "Too Low" : "Too High") :
+                                   previewStatus === 'warning' ? (isLow ? "Low" : "High") : "Normal"}
+                                </span>
+                              )}
+                            </div>
+                            
+                            <p className="text-xs text-muted-foreground mb-2">{template.description}</p>
+                            
+                            {/* Value Input */}
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 relative">
+                                <input
+                                  type="number"
+                                  step="any"
+                                  value={value}
+                                  onChange={(e) => updateParameterValue(index, e.target.value)}
+                                  placeholder="Enter value"
+                                  disabled={!included}
+                                  className="w-full p-2.5 pr-16 bg-background rounded-lg border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
+                                />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                                  {template.unit}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            {/* Normal Range */}
+                            <div className="mt-2 flex items-center gap-2 text-xs">
+                              <span className="text-muted-foreground">Normal range:</span>
+                              <span className="font-medium text-success">{template.min} - {template.max} {template.unit}</span>
+                            </div>
+                            
+                            {/* Status indicator with recommendation preview */}
+                            {hasValue && included && previewStatus !== 'normal' && (
+                              <div className={cn(
+                                "mt-2 p-2 rounded-lg text-xs",
+                                previewStatus === 'critical' ? "bg-destructive/10 text-destructive" : "bg-warning/10 text-warning-foreground"
+                              )}>
+                                {isLow ? template.lowRecommendation : template.highRecommendation}
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  ))}
+                  )
+                })}
+              </div>
+              
+              {/* Summary */}
+              {parameterInputs.some(p => p.included && p.value !== '') && (
+                <div className="p-3 bg-muted/50 rounded-xl">
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">{parameterInputs.filter(p => p.included && p.value !== '').length}</span> parameters entered
+                  </p>
                 </div>
               )}
               
               <button
-                onClick={() => setStep('review')}
-                disabled={parameters.length === 0}
+                onClick={() => {
+                  setParameters(buildParameters())
+                  setStep('review')
+                }}
+                disabled={!parameterInputs.some(p => p.included && p.value !== '')}
                 className="w-full mt-4 p-4 gradient-primary text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               >
                 Review Report
@@ -467,16 +600,16 @@ function UploadReportModal({
                 {/* Overall Status */}
                 <div className={cn(
                   "p-3 rounded-xl text-center",
-                  calculateOverallStatus() === 'critical' ? 'bg-destructive/20' :
-                  calculateOverallStatus() === 'warning' ? 'bg-warning/20' : 'bg-success/20'
+                  calculateOverallStatus(parameters) === 'critical' ? 'bg-destructive/20' :
+                  calculateOverallStatus(parameters) === 'warning' ? 'bg-warning/20' : 'bg-success/20'
                 )}>
                   <span className={cn(
                     "text-sm font-semibold",
-                    calculateOverallStatus() === 'critical' ? 'text-destructive' :
-                    calculateOverallStatus() === 'warning' ? 'text-warning-foreground' : 'text-success'
+                    calculateOverallStatus(parameters) === 'critical' ? 'text-destructive' :
+                    calculateOverallStatus(parameters) === 'warning' ? 'text-warning-foreground' : 'text-success'
                   )}>
-                    Overall Status: {calculateOverallStatus() === 'critical' ? '🚨 Needs Attention' :
-                                     calculateOverallStatus() === 'warning' ? '⚠️ Monitor Closely' : '✅ All Good'}
+                    Overall Status: {calculateOverallStatus(parameters) === 'critical' ? 'Needs Attention' :
+                                     calculateOverallStatus(parameters) === 'warning' ? 'Monitor Closely' : 'All Good'}
                   </span>
                 </div>
               </div>
