@@ -4,236 +4,183 @@ import { useMindMateStore } from "@/lib/mindmate-store"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
+const STEPS = [
+  {
+    icon: (
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <path d="M16 4C16 4 6 8 6 16C6 21.523 10.477 26 16 26C21.523 26 26 21.523 26 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <path d="M11 16H21M16 11V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    ),
+    heading: "Understand your reports",
+    subheading: "No medical degree needed",
+    description: "Upload any blood test, lipid panel, thyroid report — we read it and explain every value in simple words.",
+    visual: [
+      { dot: "bg-destructive", label: "Vitamin D is low. Get 20 min of morning sunlight.", color: "text-destructive" },
+      { dot: "bg-warning", label: "Cholesterol slightly high. Reduce fried food.", color: "text-warning-foreground" },
+      { dot: "bg-success", label: "Blood sugar is normal. Keep it up!", color: "text-success" },
+    ],
+  },
+  {
+    icon: (
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <rect x="4" y="6" width="24" height="20" rx="3" stroke="currentColor" strokeWidth="2"/>
+        <path d="M4 12H28" stroke="currentColor" strokeWidth="2"/>
+        <path d="M10 4V8M22 4V8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <path d="M10 18H16M10 22H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    ),
+    heading: "Track over time",
+    subheading: "See your trends, not just one test",
+    description: "Add multiple reports and we show you if things are getting better or worse — like a health diary.",
+    visual: null,
+    trackVisual: true,
+  },
+  {
+    icon: (
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <path d="M16 4L19.09 11.26L27 12.27L21.5 17.64L22.91 25.52L16 21.77L9.09 25.52L10.5 17.64L5 12.27L12.91 11.26L16 4Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+      </svg>
+    ),
+    heading: "You are in control",
+    subheading: "Private. Yours. Always.",
+    description: "Your data stays on your device. Nothing is shared or sold. You can delete everything at any time.",
+    visual: null,
+    privacyVisual: true,
+  },
+]
+
 export function OnboardingScreen() {
-  const { 
-    onboardingStep, 
-    setOnboardingStep, 
-    privacyMode, 
-    setPrivacyMode,
-    checkInTime,
-    setCheckInTime,
+  const {
+    onboardingStep,
+    setOnboardingStep,
     completeOnboarding,
-    loadSampleMedicines
+    loadSampleMedicines,
   } = useMindMateStore()
-  
-  const nextStep = () => {
-    if (onboardingStep < 3) {
-      setOnboardingStep(onboardingStep + 1)
-    }
+
+  const stepIndex = onboardingStep - 1
+  const step = STEPS[stepIndex]
+  const isLast = onboardingStep === STEPS.length
+
+  const next = () => {
+    if (!isLast) setOnboardingStep(onboardingStep + 1)
   }
-  
-  const prevStep = () => {
-    if (onboardingStep > 1) {
-      setOnboardingStep(onboardingStep - 1)
-    }
+  const prev = () => {
+    if (onboardingStep > 1) setOnboardingStep(onboardingStep - 1)
   }
-  
-  const handleComplete = () => {
+  const finish = () => {
     loadSampleMedicines()
     completeOnboarding()
   }
-  
+
   return (
-    <div className="min-h-screen gradient-calm p-8 pt-16 flex flex-col">
-      {/* Progress Dots */}
-      <div className="flex gap-2 mb-8">
-        {[1, 2, 3].map((step) => (
+    <div className="min-h-screen bg-background flex flex-col px-6 pt-14 pb-10">
+
+      {/* Step dots */}
+      <div className="flex gap-2 mb-10">
+        {STEPS.map((_, i) => (
           <div
-            key={step}
+            key={i}
             className={cn(
-              "h-2 rounded-full transition-all",
-              step === onboardingStep 
-                ? "w-6 bg-white" 
-                : "w-2 bg-white/40"
+              "h-1.5 rounded-full transition-all duration-300",
+              i === stepIndex ? "w-8 bg-primary" : i < stepIndex ? "w-4 bg-primary/40" : "w-4 bg-border"
             )}
           />
         ))}
       </div>
-      
-      {/* Card */}
-      <div className="flex-1 bg-gradient-to-br from-white/95 to-background/90 backdrop-blur-xl rounded-2xl p-8 shadow-xl border border-white/50 flex flex-col">
-        {/* Step 1: Privacy */}
-        {onboardingStep === 1 && (
-          <>
-            <div className="w-20 h-20 gradient-primary rounded-xl flex items-center justify-center mb-6 text-4xl text-white">
-              🔒
+
+      {/* Icon */}
+      <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6">
+        {step.icon}
+      </div>
+
+      {/* Text */}
+      <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-2">
+        {step.subheading}
+      </p>
+      <h2 className="text-2xl font-bold text-foreground text-balance mb-3 leading-tight">
+        {step.heading}
+      </h2>
+      <p className="text-sm text-muted-foreground leading-relaxed mb-8">
+        {step.description}
+      </p>
+
+      {/* Visual for step 1 — report preview */}
+      {step.visual && (
+        <div className="flex-1 space-y-3">
+          {step.visual.map((item) => (
+            <div
+              key={item.label}
+              className="flex items-start gap-3 bg-card border border-border rounded-xl p-4 shadow-sm"
+            >
+              <div className={`w-2.5 h-2.5 rounded-full mt-0.5 shrink-0 ${item.dot}`} />
+              <p className={`text-sm font-medium ${item.color}`}>{item.label}</p>
             </div>
-            <h2 className="text-2xl font-bold text-foreground mb-3">Your Privacy Matters</h2>
-            <p className="text-muted-foreground mb-6 leading-relaxed">
-              Everything you share stays on your device. Choose how you want to use MindMate.
-            </p>
-            
-            <div className="flex flex-col gap-3 mb-6">
-              <button
-                onClick={() => setPrivacyMode('anonymous')}
-                className={cn(
-                  "flex items-center gap-4 p-4 bg-card border-2 rounded-xl transition-all",
-                  privacyMode === 'anonymous' 
-                    ? "border-primary bg-primary/5" 
-                    : "border-border hover:border-primary/50"
-                )}
-              >
-                <div className={cn(
-                  "w-12 h-12 rounded-lg flex items-center justify-center text-2xl",
-                  privacyMode === 'anonymous' ? "bg-primary/10" : "bg-muted"
-                )}>
-                  👤
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-foreground">Anonymous Mode</div>
-                  <div className="text-sm text-muted-foreground">No name, no tracking, just support</div>
-                </div>
-              </button>
-              
-              <button
-                onClick={() => setPrivacyMode('personalized')}
-                className={cn(
-                  "flex items-center gap-4 p-4 bg-card border-2 rounded-xl transition-all",
-                  privacyMode === 'personalized' 
-                    ? "border-primary bg-primary/5" 
-                    : "border-border hover:border-primary/50"
-                )}
-              >
-                <div className={cn(
-                  "w-12 h-12 rounded-lg flex items-center justify-center text-2xl",
-                  privacyMode === 'personalized' ? "bg-primary/10" : "bg-muted"
-                )}>
-                  ✨
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-foreground">Personalized</div>
-                  <div className="text-sm text-muted-foreground">Add a nickname for a personal touch</div>
-                </div>
-              </button>
-            </div>
-            
-            <div className="mt-auto">
-              <Button onClick={nextStep} className="w-full gradient-primary text-white rounded-full py-6">
-                Continue
-              </Button>
-            </div>
-          </>
-        )}
-        
-        {/* Step 2: Check-in Time */}
-        {onboardingStep === 2 && (
-          <>
-            <div className="w-20 h-20 gradient-primary rounded-xl flex items-center justify-center mb-6 text-4xl text-white">
-              ⏰
-            </div>
-            <h2 className="text-2xl font-bold text-foreground mb-3">When Should We Check In?</h2>
-            <p className="text-muted-foreground mb-6 leading-relaxed">
-              We will send a gentle reminder to help you build a daily wellness habit.
-            </p>
-            
-            <div className="flex flex-col gap-3 mb-6">
-              <button
-                onClick={() => setCheckInTime('morning')}
-                className={cn(
-                  "flex items-center gap-4 p-4 bg-card border-2 rounded-xl transition-all",
-                  checkInTime === 'morning' 
-                    ? "border-primary bg-primary/5" 
-                    : "border-border hover:border-primary/50"
-                )}
-              >
-                <div className={cn(
-                  "w-12 h-12 rounded-lg flex items-center justify-center text-2xl",
-                  checkInTime === 'morning' ? "bg-primary/10" : "bg-muted"
-                )}>
-                  🌅
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-foreground">Morning</div>
-                  <div className="text-sm text-muted-foreground">Start your day with intention</div>
-                </div>
-              </button>
-              
-              <button
-                onClick={() => setCheckInTime('evening')}
-                className={cn(
-                  "flex items-center gap-4 p-4 bg-card border-2 rounded-xl transition-all",
-                  checkInTime === 'evening' 
-                    ? "border-primary bg-primary/5" 
-                    : "border-border hover:border-primary/50"
-                )}
-              >
-                <div className={cn(
-                  "w-12 h-12 rounded-lg flex items-center justify-center text-2xl",
-                  checkInTime === 'evening' ? "bg-primary/10" : "bg-muted"
-                )}>
-                  🌙
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-foreground">Evening</div>
-                  <div className="text-sm text-muted-foreground">Reflect before winding down</div>
-                </div>
-              </button>
-            </div>
-            
-            <div className="mt-auto flex gap-3">
-              <Button onClick={prevStep} variant="outline" className="flex-1 rounded-full py-6">
-                Back
-              </Button>
-              <Button onClick={nextStep} className="flex-1 gradient-primary text-white rounded-full py-6">
-                Continue
-              </Button>
-            </div>
-          </>
-        )}
-        
-        {/* Step 3: Features */}
-        {onboardingStep === 3 && (
-          <>
-            <div className="w-20 h-20 gradient-primary rounded-xl flex items-center justify-center mb-6 text-4xl text-white">
-              💜
-            </div>
-            <h2 className="text-2xl font-bold text-foreground mb-3">You are All Set!</h2>
-            <p className="text-muted-foreground mb-6 leading-relaxed">
-              Here is what MindMate offers:
-            </p>
-            
-            <div className="flex flex-col gap-3 mb-6">
-              <div className="flex items-center gap-4 p-4 bg-card border border-border rounded-xl">
-                <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center text-2xl">
-                  🎯
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-foreground">Daily Check-Ins</div>
-                  <div className="text-sm text-muted-foreground">Track your mood in seconds</div>
-                </div>
+          ))}
+        </div>
+      )}
+
+      {/* Visual for step 2 — track over time */}
+      {step.trackVisual && (
+        <div className="flex-1 bg-card border border-border rounded-2xl p-5">
+          <p className="text-xs text-muted-foreground mb-4 font-medium">Hemoglobin over time</p>
+          <div className="flex items-end gap-2 h-24">
+            {[
+              { h: 55, label: "Jan", ok: false },
+              { h: 65, label: "Feb", ok: false },
+              { h: 72, label: "Mar", ok: true },
+              { h: 80, label: "Apr", ok: true },
+              { h: 90, label: "May", ok: true },
+            ].map((bar) => (
+              <div key={bar.label} className="flex-1 flex flex-col items-center gap-1">
+                <div
+                  className={cn("w-full rounded-t-md transition-all", bar.ok ? "bg-success" : "bg-warning")}
+                  style={{ height: `${bar.h}%` }}
+                />
+                <span className="text-xs text-muted-foreground">{bar.label}</span>
               </div>
-              
-              <div className="flex items-center gap-4 p-4 bg-card border border-border rounded-xl">
-                <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center text-2xl">
-                  💊
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-foreground">Medicine Tracking</div>
-                  <div className="text-sm text-muted-foreground">Never miss a dose again</div>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-4 p-4 bg-card border border-border rounded-xl">
-                <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center text-2xl">
-                  🧘
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-foreground">Coping Tools</div>
-                  <div className="text-sm text-muted-foreground">Breathing, grounding & more</div>
-                </div>
+            ))}
+          </div>
+          <p className="text-xs text-success font-medium mt-4">Getting better every month</p>
+        </div>
+      )}
+
+      {/* Visual for step 3 — privacy */}
+      {step.privacyVisual && (
+        <div className="flex-1 space-y-3">
+          {[
+            { icon: "📱", title: "Stays on your phone", desc: "We never upload your data" },
+            { icon: "🔒", title: "No account required", desc: "No email, no password needed" },
+            { icon: "🗑️", title: "Delete anytime", desc: "One tap clears everything" },
+          ].map((item) => (
+            <div key={item.title} className="flex items-center gap-4 bg-card border border-border rounded-xl p-4">
+              <span className="text-2xl">{item.icon}</span>
+              <div>
+                <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                <p className="text-xs text-muted-foreground">{item.desc}</p>
               </div>
             </div>
-            
-            <div className="mt-auto flex gap-3">
-              <Button onClick={prevStep} variant="outline" className="flex-1 rounded-full py-6">
-                Back
-              </Button>
-              <Button onClick={handleComplete} className="flex-1 gradient-primary text-white rounded-full py-6">
-                Let&apos;s Go!
-              </Button>
-            </div>
-          </>
+          ))}
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="mt-8 flex gap-3">
+        {onboardingStep > 1 && (
+          <Button
+            onClick={prev}
+            variant="outline"
+            className="flex-1 py-6 rounded-2xl font-semibold"
+          >
+            Back
+          </Button>
         )}
+        <Button
+          onClick={isLast ? finish : next}
+          className="flex-1 py-6 rounded-2xl font-semibold gradient-primary text-white"
+        >
+          {isLast ? "Start using the app" : "Continue"}
+        </Button>
       </div>
     </div>
   )
