@@ -16,6 +16,8 @@ export type Screen =
   | 'affirmations'
   | 'insights' 
   | 'resources'
+  | 'reports'
+  | 'report-detail'
 
 export type Mood = 'great' | 'good' | 'okay' | 'low' | 'rough'
 
@@ -52,6 +54,34 @@ export interface DoseLog {
 export interface GratitudeEntry {
   timestamp: string
   items: string[]
+}
+
+export type ReportStatus = 'normal' | 'warning' | 'critical'
+export type ReportCategory = 'blood' | 'urine' | 'lipid' | 'thyroid' | 'diabetes' | 'liver' | 'kidney' | 'vitamin' | 'general'
+
+export interface ReportParameter {
+  name: string
+  value: number
+  unit: string
+  min: number
+  max: number
+  status: ReportStatus
+  description: string
+  recommendation?: string
+}
+
+export interface HealthReport {
+  id: string
+  name: string
+  category: ReportCategory
+  date: string
+  lab: string
+  doctor?: string
+  parameters: ReportParameter[]
+  summary: string
+  overallStatus: ReportStatus
+  aiInsights?: string[]
+  followUpDate?: string
 }
 
 // Breathing Techniques Config
@@ -210,6 +240,10 @@ interface MindMateState {
   // Calendar
   currentWeek: number
   
+  // Reports
+  reports: HealthReport[]
+  selectedReportId: string | null
+  
   // Actions
   navigateTo: (screen: Screen) => void
   setOnboardingStep: (step: number) => void
@@ -227,6 +261,12 @@ interface MindMateState {
   addGratitude: (items: string[]) => void
   
   setCurrentWeek: (week: number) => void
+  
+  // Reports
+  addReport: (report: Omit<HealthReport, 'id'>) => void
+  removeReport: (id: string) => void
+  selectReport: (id: string | null) => void
+  loadSampleReports: () => void
 }
 
 export const useMindMateStore = create<MindMateState>()(
