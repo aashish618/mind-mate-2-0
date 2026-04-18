@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -64,13 +64,12 @@ export function CaregiverDialog() {
             </div>
             Family Caregivers
           </DialogTitle>
+          <DialogDescription>
+            Add family members who can be notified when you miss a dose.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="mt-4 space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Caregivers will be notified when you miss a dose. They&apos;ll receive alerts via WhatsApp.
-          </p>
-
           {/* Existing Caregivers */}
           {caregivers.length > 0 && (
             <div className="space-y-3">

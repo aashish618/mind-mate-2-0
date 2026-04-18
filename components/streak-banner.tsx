@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 const milestones = [
   { days: 7, message: "One week! Your heart thanks you!", icon: Star },
   { days: 30, message: "One month! Doctor would be proud!", icon: Trophy },
-  { days: 100, message: "100 days! You&apos;re a champion!", icon: Flame },
+  { days: 100, message: "100 days! You are a champion!", icon: Flame },
 ]
 
 export function StreakBanner() {

@@ -1,6 +1,6 @@
 "use client"
 
-import { Pill, Plus } from "lucide-react"
+import { Pill } from "lucide-react"
 import { AddMedicineDialog } from "./add-medicine-dialog"
 
 export function EmptyState() {
