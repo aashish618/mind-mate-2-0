@@ -86,6 +86,117 @@ type ParameterValueInput = {
   included: boolean
 }
 
+// Simulated extracted report data - represents what would come from OCR/AI parsing
+type ExtractedReportData = {
+  reportName: string
+  category: ReportCategory
+  lab: string
+  doctor?: string
+  date: string
+  extractedValues: Record<string, number> // parameter name -> value
+}
+
+// Sample extracted data for different report types (simulates AI/OCR extraction)
+const sampleExtractedReports: ExtractedReportData[] = [
+  {
+    reportName: 'Complete Blood Count (CBC)',
+    category: 'blood',
+    lab: 'HealthFirst Diagnostics',
+    doctor: 'Dr. Sharma',
+    date: new Date().toISOString().split('T')[0],
+    extractedValues: {
+      'Hemoglobin': 11.2,
+      'RBC Count': 4.5,
+      'WBC Count': 7.2,
+      'Platelets': 250,
+      'Hematocrit': 38,
+    }
+  },
+  {
+    reportName: 'Lipid Profile',
+    category: 'lipid',
+    lab: 'City Medical Labs',
+    doctor: 'Dr. Patel',
+    date: new Date().toISOString().split('T')[0],
+    extractedValues: {
+      'Total Cholesterol': 245,
+      'LDL Cholesterol': 165,
+      'HDL Cholesterol': 52,
+      'Triglycerides': 180,
+      'VLDL Cholesterol': 28,
+    }
+  },
+  {
+    reportName: 'Thyroid Panel',
+    category: 'thyroid',
+    lab: 'Wellness Diagnostics',
+    doctor: 'Dr. Kumar',
+    date: new Date().toISOString().split('T')[0],
+    extractedValues: {
+      'TSH': 2.5,
+      'T3 (Total)': 120,
+      'T4 (Total)': 7.5,
+      'Free T3': 3.1,
+      'Free T4': 1.2,
+    }
+  },
+  {
+    reportName: 'Diabetes Panel (HbA1c)',
+    category: 'diabetes',
+    lab: 'HealthFirst Diagnostics',
+    doctor: 'Dr. Sharma',
+    date: new Date().toISOString().split('T')[0],
+    extractedValues: {
+      'Fasting Glucose': 115,
+      'HbA1c': 5.9,
+      'Post-Prandial Glucose': 145,
+      'Fasting Insulin': 12.5,
+    }
+  },
+  {
+    reportName: 'Liver Function Test',
+    category: 'liver',
+    lab: 'Metro Diagnostics',
+    doctor: 'Dr. Singh',
+    date: new Date().toISOString().split('T')[0],
+    extractedValues: {
+      'ALT (SGPT)': 42,
+      'AST (SGOT)': 35,
+      'ALP': 85,
+      'Bilirubin (Total)': 0.8,
+      'Albumin': 4.2,
+    }
+  },
+  {
+    reportName: 'Kidney Function Test',
+    category: 'kidney',
+    lab: 'City Medical Labs',
+    doctor: 'Dr. Verma',
+    date: new Date().toISOString().split('T')[0],
+    extractedValues: {
+      'Creatinine': 1.4,
+      'BUN': 22,
+      'Uric Acid': 7.8,
+      'eGFR': 75,
+    }
+  },
+  {
+    reportName: 'Vitamin Profile',
+    category: 'vitamin',
+    lab: 'Wellness Diagnostics',
+    doctor: 'Dr. Gupta',
+    date: new Date().toISOString().split('T')[0],
+    extractedValues: {
+      'Vitamin D': 18,
+      'Vitamin B12': 320,
+      'Iron': 55,
+      'Ferritin': 45,
+      'Folate': 8.5,
+      'Calcium': 9.2,
+    }
+  },
+]
+
 // Upload Modal Component
 function UploadReportModal({ 
   isOpen, 
@@ -96,10 +207,12 @@ function UploadReportModal({
   onClose: () => void
   onSubmit: (report: Omit<HealthReport, 'id'>) => void
 }) {
-  const [step, setStep] = useState<'method' | 'details' | 'parameters' | 'review'>('method')
+  const [step, setStep] = useState<'method' | 'details' | 'parameters' | 'review' | 'processing'>('method')
   const [uploadMethod, setUploadMethod] = useState<'manual' | 'file' | null>(null)
   const [fileName, setFileName] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [processingProgress, setProcessingProgress] = useState(0)
   
   // Form state
   const [reportName, setReportName] = useState('')
@@ -188,6 +301,8 @@ function UploadReportModal({
     setDoctor('')
     setParameters([])
     setParameterInputs([])
+    setIsProcessing(false)
+    setProcessingProgress(0)
   }
   
   const handleClose = () => {
@@ -195,15 +310,57 @@ function UploadReportModal({
     onClose()
   }
   
+  // Initialize parameters with extracted values
+  const initializeWithExtractedValues = (cat: ReportCategory, extractedValues: Record<string, number>) => {
+    const templates = categoryParameterTemplates[cat]
+    setParameterInputs(templates.map(template => ({
+      template,
+      value: extractedValues[template.name]?.toString() || '',
+      included: true
+    })))
+  }
+  
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       setFileName(file.name)
-      setReportName('Uploaded Report')
-      setCategory('general')
-      initializeParameterInputs('general')
-      setLab('Lab from document')
-      setStep('details')
+      setUploadMethod('file')
+      setStep('processing')
+      setIsProcessing(true)
+      setProcessingProgress(0)
+      
+      // Simulate document processing with progress
+      const progressInterval = setInterval(() => {
+        setProcessingProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(progressInterval)
+            return 100
+          }
+          return prev + Math.random() * 15 + 5
+        })
+      }, 200)
+      
+      // Simulate AI/OCR extraction delay
+      setTimeout(() => {
+        clearInterval(progressInterval)
+        setProcessingProgress(100)
+        
+        // Randomly select one of the sample extracted reports
+        const extractedData = sampleExtractedReports[Math.floor(Math.random() * sampleExtractedReports.length)]
+        
+        // Fill form with extracted data
+        setReportName(extractedData.reportName)
+        setCategory(extractedData.category)
+        setLab(extractedData.lab)
+        setDoctor(extractedData.doctor || '')
+        setDate(extractedData.date)
+        
+        // Initialize parameters with extracted values
+        initializeWithExtractedValues(extractedData.category, extractedData.extractedValues)
+        
+        setIsProcessing(false)
+        setStep('parameters') // Go directly to parameters since values are extracted
+      }, 2500)
     }
   }
   
@@ -255,15 +412,21 @@ function UploadReportModal({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <button 
-            onClick={step === 'method' ? handleClose : () => setStep(step === 'parameters' ? 'details' : step === 'review' ? 'parameters' : 'method')}
+            onClick={step === 'method' || step === 'processing' ? handleClose : () => setStep(
+              step === 'parameters' ? (uploadMethod === 'file' ? 'method' : 'details') : 
+              step === 'review' ? 'parameters' : 'method'
+            )}
             className="text-muted-foreground hover:text-foreground transition-colors"
+            disabled={isProcessing}
           >
-            {step === 'method' ? 'Cancel' : '< Back'}
+            {step === 'method' || step === 'processing' ? 'Cancel' : '< Back'}
           </button>
           <h2 className="text-lg font-semibold text-foreground">
             {step === 'method' ? 'Add Report' : 
+             step === 'processing' ? 'Processing Report' :
              step === 'details' ? 'Report Details' :
-             step === 'parameters' ? 'Add Parameters' : 'Review Report'}
+             step === 'parameters' ? (uploadMethod === 'file' ? 'Extracted Values' : 'Enter Values') : 
+             'Review Report'}
           </h2>
           <div className="w-16"></div>
         </div>
@@ -299,16 +462,16 @@ function UploadReportModal({
               {/* File Upload */}
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full p-4 bg-muted/50 hover:bg-muted rounded-xl border border-border flex items-center gap-4 transition-colors"
+                className="w-full p-4 bg-success/5 hover:bg-success/10 rounded-xl border-2 border-success/30 flex items-center gap-4 transition-colors"
               >
                 <div className="w-14 h-14 rounded-xl bg-success/10 flex items-center justify-center text-2xl">
                   📄
                 </div>
                 <div className="text-left flex-1">
-                  <h3 className="font-semibold text-foreground">Upload File</h3>
-                  <p className="text-sm text-muted-foreground">PDF, Image, or Document</p>
+                  <h3 className="font-semibold text-foreground">Upload Report</h3>
+                  <p className="text-sm text-muted-foreground">We will extract values automatically</p>
                 </div>
-                <span className="text-muted-foreground">→</span>
+                <span className="px-2 py-1 bg-success/20 text-success text-xs font-medium rounded-full">Recommended</span>
               </button>
               <input 
                 ref={fileInputRef}
@@ -331,6 +494,66 @@ function UploadReportModal({
                 >
                   Load Sample Reports
                 </button>
+              </div>
+            </div>
+          )}
+          
+          {/* Processing Step */}
+          {step === 'processing' && (
+            <div className="py-12 flex flex-col items-center justify-center">
+              <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center text-4xl mb-6 animate-pulse">
+                {processingProgress < 30 ? '📄' : processingProgress < 60 ? '🔍' : processingProgress < 90 ? '📊' : '✅'}
+              </div>
+              
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                {processingProgress < 30 ? 'Reading Document...' : 
+                 processingProgress < 60 ? 'Detecting Report Type...' : 
+                 processingProgress < 90 ? 'Extracting Values...' : 'Almost Done!'}
+              </h3>
+              <p className="text-sm text-muted-foreground mb-6">{fileName}</p>
+              
+              {/* Progress Bar */}
+              <div className="w-full max-w-xs">
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(processingProgress, 100)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  {Math.min(Math.round(processingProgress), 100)}% complete
+                </p>
+              </div>
+              
+              <div className="mt-8 space-y-2 w-full max-w-xs">
+                <div className={cn(
+                  "flex items-center gap-2 text-sm",
+                  processingProgress >= 20 ? "text-success" : "text-muted-foreground"
+                )}>
+                  <span>{processingProgress >= 20 ? '✓' : '○'}</span>
+                  <span>Document uploaded</span>
+                </div>
+                <div className={cn(
+                  "flex items-center gap-2 text-sm",
+                  processingProgress >= 50 ? "text-success" : "text-muted-foreground"
+                )}>
+                  <span>{processingProgress >= 50 ? '✓' : '○'}</span>
+                  <span>Report type identified</span>
+                </div>
+                <div className={cn(
+                  "flex items-center gap-2 text-sm",
+                  processingProgress >= 80 ? "text-success" : "text-muted-foreground"
+                )}>
+                  <span>{processingProgress >= 80 ? '✓' : '○'}</span>
+                  <span>Parameters extracted</span>
+                </div>
+                <div className={cn(
+                  "flex items-center gap-2 text-sm",
+                  processingProgress >= 100 ? "text-success" : "text-muted-foreground"
+                )}>
+                  <span>{processingProgress >= 100 ? '✓' : '○'}</span>
+                  <span>Analysis complete</span>
+                </div>
               </div>
             </div>
           )}
@@ -429,12 +652,24 @@ function UploadReportModal({
           
           {step === 'parameters' && (
             <div className="space-y-4">
-              <div className="bg-primary/5 rounded-xl p-3 border border-primary/20">
-                <p className="text-sm text-foreground font-medium">Enter your test values</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Just fill in the values from your report. We have pre-filled the normal ranges for you.
-                </p>
-              </div>
+              {uploadMethod === 'file' ? (
+                <div className="bg-success/10 rounded-xl p-3 border border-success/30">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-lg">✅</span>
+                    <p className="text-sm text-foreground font-medium">Values extracted from your report</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    We found {parameterInputs.filter(p => p.value !== '').length} parameters. Review and adjust if needed.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-primary/5 rounded-xl p-3 border border-primary/20">
+                  <p className="text-sm text-foreground font-medium">Enter your test values</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Just fill in the values from your report. We have pre-filled the normal ranges for you.
+                  </p>
+                </div>
+              )}
               
               {/* Parameter Input Cards */}
               <div className="space-y-3">
