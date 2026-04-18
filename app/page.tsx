@@ -18,6 +18,8 @@ import { GratitudeScreen } from "@/components/mindmate/screens/gratitude-screen"
 import { AffirmationsScreen } from "@/components/mindmate/screens/affirmations-screen"
 import { InsightsScreen } from "@/components/mindmate/screens/insights-screen"
 import { ResourcesScreen } from "@/components/mindmate/screens/resources-screen"
+import { ReportsScreen } from "@/components/mindmate/screens/reports-screen"
+import { ReportDetailScreen } from "@/components/mindmate/screens/report-detail-screen"
 
 export default function MindMateApp() {
   const { currentScreen, isOnboarded, navigateTo } = useMindMateStore()
@@ -85,6 +87,10 @@ export default function MindMateApp() {
         return <InsightsScreen />
       case 'resources':
         return <ResourcesScreen />
+      case 'reports':
+        return <ReportsScreen />
+      case 'report-detail':
+        return <ReportDetailScreen />
       default:
         return <DashboardScreen />
     }

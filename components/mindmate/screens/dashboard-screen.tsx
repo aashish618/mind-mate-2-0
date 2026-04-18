@@ -59,8 +59,25 @@ export function DashboardScreen() {
           </div>
         </div>
         
+        {/* Health Reports Card */}
+        <div 
+          onClick={() => navigateTo('reports')}
+          className="bg-card rounded-xl p-4 shadow-md border border-border cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center text-3xl" style={{ background: 'linear-gradient(135deg, #6B8E23 0%, #8B9A6B 100%)' }}>
+              📋
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-foreground">Health Reports</h3>
+              <p className="text-sm text-muted-foreground">Track and analyze your test results</p>
+            </div>
+            <div className="text-primary text-lg">→</div>
+          </div>
+        </div>
+        
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
+        <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-400">
           <div 
             onClick={() => navigateTo('medicines')}
             className="bg-card rounded-xl p-5 text-center cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-md border border-border shadow-sm"

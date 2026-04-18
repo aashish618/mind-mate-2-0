@@ -11,8 +11,8 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { icon: "🏠", label: "Home", screen: "dashboard" },
+  { icon: "📋", label: "Reports", screen: "reports" },
   { icon: "💊", label: "Medicines", screen: "medicines" },
-  { icon: "📅", label: "Calendar", screen: "calendar" },
   { icon: "📊", label: "Insights", screen: "insights" },
   { icon: "💚", label: "Help", screen: "resources" },
 ]

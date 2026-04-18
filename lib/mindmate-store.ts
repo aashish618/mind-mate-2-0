@@ -360,7 +360,115 @@ export const useMindMateStore = create<MindMateState>()(
       },
       
       // Calendar
-      setCurrentWeek: (week) => set({ currentWeek: week })
+      setCurrentWeek: (week) => set({ currentWeek: week }),
+      
+      // Reports
+      reports: [],
+      selectedReportId: null,
+      
+      addReport: (report) => {
+        const newReport: HealthReport = { ...report, id: generateId() }
+        set((state) => ({ reports: [...state.reports, newReport] }))
+      },
+      
+      removeReport: (id) => {
+        set((state) => ({
+          reports: state.reports.filter((r) => r.id !== id)
+        }))
+      },
+      
+      selectReport: (id) => set({ selectedReportId: id }),
+      
+      loadSampleReports: () => {
+        const sampleReports: Omit<HealthReport, 'id'>[] = [
+          {
+            name: 'Complete Blood Count (CBC)',
+            category: 'blood',
+            date: '2026-04-15',
+            lab: 'HealthFirst Diagnostics',
+            doctor: 'Dr. Sharma',
+            overallStatus: 'warning',
+            summary: 'Most values are within normal range. Hemoglobin is slightly low, which may indicate mild anemia. Vitamin D levels require attention.',
+            aiInsights: [
+              'Your hemoglobin has been trending down over the last 3 reports. Consider iron-rich foods.',
+              'Low Vitamin D is common but easily correctable with supplements and sun exposure.',
+              'Overall blood health is good - keep up with regular check-ups.'
+            ],
+            followUpDate: '2026-05-15',
+            parameters: [
+              { name: 'Hemoglobin', value: 11.2, unit: 'g/dL', min: 12, max: 16, status: 'warning', description: 'Oxygen-carrying protein in blood', recommendation: 'Include iron-rich foods like spinach, lentils, and red meat' },
+              { name: 'RBC Count', value: 4.5, unit: 'million/μL', min: 4.0, max: 5.5, status: 'normal', description: 'Red blood cell count' },
+              { name: 'WBC Count', value: 7.2, unit: 'thousand/μL', min: 4.0, max: 11.0, status: 'normal', description: 'White blood cell count - immunity indicator' },
+              { name: 'Platelets', value: 250, unit: 'thousand/μL', min: 150, max: 400, status: 'normal', description: 'Blood clotting cells' },
+              { name: 'Vitamin D', value: 18, unit: 'ng/mL', min: 30, max: 100, status: 'critical', description: 'Essential for bone health and immunity', recommendation: 'Take Vitamin D3 supplements and get 15-20 mins of morning sunlight' },
+              { name: 'Iron', value: 55, unit: 'μg/dL', min: 60, max: 170, status: 'warning', description: 'Essential mineral for hemoglobin production', recommendation: 'Pair iron-rich foods with Vitamin C for better absorption' }
+            ]
+          },
+          {
+            name: 'Lipid Profile',
+            category: 'lipid',
+            date: '2026-04-10',
+            lab: 'City Medical Labs',
+            doctor: 'Dr. Patel',
+            overallStatus: 'critical',
+            summary: 'LDL cholesterol is elevated which increases cardiovascular risk. HDL (good cholesterol) is within range. Immediate lifestyle changes recommended.',
+            aiInsights: [
+              'Your LDL has increased by 15% since last test. Diet modification is crucial.',
+              'Good news: Your HDL levels are healthy, providing some protection.',
+              'Consider reducing saturated fats and increasing omega-3 intake.'
+            ],
+            followUpDate: '2026-05-10',
+            parameters: [
+              { name: 'Total Cholesterol', value: 245, unit: 'mg/dL', min: 0, max: 200, status: 'critical', description: 'Total cholesterol in blood', recommendation: 'Reduce fried foods and processed snacks' },
+              { name: 'LDL Cholesterol', value: 165, unit: 'mg/dL', min: 0, max: 100, status: 'critical', description: 'Bad cholesterol - clogs arteries', recommendation: 'Add more fiber, reduce red meat, exercise 30 mins daily' },
+              { name: 'HDL Cholesterol', value: 52, unit: 'mg/dL', min: 40, max: 60, status: 'normal', description: 'Good cholesterol - protects heart' },
+              { name: 'Triglycerides', value: 180, unit: 'mg/dL', min: 0, max: 150, status: 'warning', description: 'Fat in blood', recommendation: 'Limit sugar, alcohol, and refined carbs' }
+            ]
+          },
+          {
+            name: 'Thyroid Panel',
+            category: 'thyroid',
+            date: '2026-03-28',
+            lab: 'Wellness Diagnostics',
+            doctor: 'Dr. Kumar',
+            overallStatus: 'normal',
+            summary: 'All thyroid markers are within optimal range. Thyroid function is healthy.',
+            aiInsights: [
+              'Excellent thyroid health! Your levels have been stable for 6 months.',
+              'Continue with your current lifestyle - it is working well.',
+              'Next thyroid check recommended in 6 months.'
+            ],
+            parameters: [
+              { name: 'TSH', value: 2.5, unit: 'mIU/L', min: 0.4, max: 4.0, status: 'normal', description: 'Thyroid stimulating hormone' },
+              { name: 'T3', value: 120, unit: 'ng/dL', min: 80, max: 200, status: 'normal', description: 'Active thyroid hormone' },
+              { name: 'T4', value: 7.5, unit: 'μg/dL', min: 4.5, max: 12.0, status: 'normal', description: 'Main thyroid hormone' }
+            ]
+          },
+          {
+            name: 'Diabetes Panel (HbA1c)',
+            category: 'diabetes',
+            date: '2026-04-01',
+            lab: 'HealthFirst Diagnostics',
+            doctor: 'Dr. Sharma',
+            overallStatus: 'warning',
+            summary: 'Fasting glucose is slightly elevated indicating pre-diabetic range. HbA1c shows borderline values. Lifestyle modifications recommended.',
+            aiInsights: [
+              'You are in the pre-diabetic range - this is reversible with action now.',
+              'Regular exercise can improve insulin sensitivity by up to 40%.',
+              'Consider reducing refined carbs and sugary beverages.'
+            ],
+            followUpDate: '2026-07-01',
+            parameters: [
+              { name: 'Fasting Glucose', value: 115, unit: 'mg/dL', min: 70, max: 100, status: 'warning', description: 'Blood sugar after fasting', recommendation: 'Monitor carb intake, avoid sugar on empty stomach' },
+              { name: 'HbA1c', value: 5.9, unit: '%', min: 4.0, max: 5.6, status: 'warning', description: '3-month average blood sugar', recommendation: 'Aim for 150 mins of moderate exercise weekly' },
+              { name: 'Post-Prandial Glucose', value: 145, unit: 'mg/dL', min: 70, max: 140, status: 'warning', description: 'Blood sugar 2 hours after meal', recommendation: 'Take a 10-min walk after meals' }
+            ]
+          }
+        ]
+        
+        const newReports = sampleReports.map(r => ({ ...r, id: generateId() }))
+        set((state) => ({ reports: [...state.reports, ...newReports] }))
+      }
     }),
     {
       name: 'mindmate-storage'
