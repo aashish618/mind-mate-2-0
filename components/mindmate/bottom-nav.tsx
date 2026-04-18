@@ -13,7 +13,7 @@ const navItems: NavItem[] = [
   { icon: "🏠", label: "Home", screen: "dashboard" },
   { icon: "📋", label: "Reports", screen: "reports" },
   { icon: "💊", label: "Medicines", screen: "medicines" },
-  { icon: "📊", label: "Insights", screen: "insights" },
+  { icon: "🩺", label: "Symptoms", screen: "symptom-checker" },
   { icon: "💚", label: "Help", screen: "resources" },
 ]
 

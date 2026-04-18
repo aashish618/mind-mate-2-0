@@ -145,6 +145,24 @@ export function DashboardScreen() {
           <div className="flex-1 h-px bg-border" />
         </div>
 
+        {/* Symptom Checker — featured banner */}
+        <button
+          onClick={() => navigateTo('symptom-checker')}
+          className="w-full flex items-center gap-4 bg-card border border-border rounded-2xl px-5 py-4 text-left hover:border-primary/30 hover:-translate-y-0.5 transition-all"
+        >
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-primary">
+              <rect x="9" y="2" width="6" height="11" rx="3" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M5 10v2a7 7 0 0014 0v-2M12 19v3M9 22h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-sm text-foreground">Symptom Checker</p>
+            <p className="text-xs text-muted-foreground">Speak in Hindi or your language</p>
+          </div>
+          <span className="text-xs font-medium px-2 py-0.5 bg-primary/10 text-primary rounded-full shrink-0">New</span>
+        </button>
+
         {/* Daily Check-In */}
         <button
           onClick={() => navigateTo('checkin')}

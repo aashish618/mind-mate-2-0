@@ -18,6 +18,7 @@ export type Screen =
   | 'resources'
   | 'reports'
   | 'report-detail'
+  | 'symptom-checker'
 
 export type Mood = 'great' | 'good' | 'okay' | 'low' | 'rough'
 

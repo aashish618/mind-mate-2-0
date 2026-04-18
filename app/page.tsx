@@ -20,6 +20,7 @@ import { InsightsScreen } from "@/components/mindmate/screens/insights-screen"
 import { ResourcesScreen } from "@/components/mindmate/screens/resources-screen"
 import { ReportsScreen } from "@/components/mindmate/screens/reports-screen"
 import { ReportDetailScreen } from "@/components/mindmate/screens/report-detail-screen"
+import { SymptomCheckerScreen } from "@/components/mindmate/screens/symptom-checker-screen"
 
 export default function MindMateApp() {
   const { currentScreen, isOnboarded, navigateTo } = useMindMateStore()
@@ -91,6 +92,8 @@ export default function MindMateApp() {
         return <ReportsScreen />
       case 'report-detail':
         return <ReportDetailScreen />
+      case 'symptom-checker':
+        return <SymptomCheckerScreen />
       default:
         return <DashboardScreen />
     }
